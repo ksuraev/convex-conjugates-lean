@@ -1,1 +1,1 @@
-# Conjugates
+# Convex Conjugates
