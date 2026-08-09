@@ -12,7 +12,7 @@ variable {f : E → EReal} {x : E} {s : Set E}
 
 /-- The Fenchel conjugate of `f : E → EReal`. -/
 noncomputable def fenchelConjugate (f : E → EReal) (v : E) : EReal :=
-  ⨆ x : E, ((⟪v, x⟫ : EReal) - f x)
+  ⨆ x : E, ⟪v, x⟫ - f x
 
 /-- The effective domain of `f`. -/
 def dom (f : E → EReal) : Set E := {x : E | f x < ⊤}
