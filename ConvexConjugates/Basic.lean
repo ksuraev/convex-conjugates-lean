@@ -21,21 +21,12 @@ noncomputable def fenchelConjugate (v : E) : EReal :=
 
 local postfix:max "∗" => fenchelConjugate -- https://lean-lang.org/doc/reference/latest/Notations-and-Macros/Custom-Operators/#operators
 
-theorem fenchel_young (v x : E) (h3 : f x ≠ ⊥) (h4: f x ≠ ⊤): ⟪v,x⟫ ≤ f x + f∗ v := by
+theorem fenchel_young (v x : E) (h3 : f x ≠ ⊥) (h4 : f x ≠ ⊤) : ⟪v,x⟫ ≤ f x + f∗ v := by
   have h : f∗ v ≥ ⟪v,x⟫ - f x := by
     exact le_iSup_iff.mpr fun b a ↦ a x
-  have h2 : f x + f∗ v ≥ ⟪v,x⟫ - f x + f x := by
-    refine (EReal.le_sub_iff_add_le ?_ ?_).mp ?_
-    constructor
-    · apply h3
-    · left
-      exact h4
-    · sorry
-  sorry
-
-
-lemma test (S : Set E) (x : S) : ⨆ y : S,  f y ≥ f x := by
-  exact le_iSup_iff.mpr fun b a ↦ a x
-
+  rw[ge_iff_le] at h
+  rw[EReal.sub_le_iff_le_add (Or.inl h3) (Or.inl h4)] at h
+  rw[add_comm]
+  exact h
 
 #min_imports
