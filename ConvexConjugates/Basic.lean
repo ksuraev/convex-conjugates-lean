@@ -51,4 +51,17 @@ theorem fenchel_young (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : ⟪v,x⟫
   rw[add_comm]
   exact h3
 
+/-- The Fenchel biconjugate of `f : E → EReal`. -/
+noncomputable def fenchelBiconjugate (x : E) : EReal := ⨆ v : E, ⟪v, x⟫ - f∗ v
+
+local postfix:max "∗∗" => fenchelBiconjugate
+
+-- Assuming we make the same assumptions as in the Fenchel-Young inequality?
+theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f∗∗ x ≤ f x := by
+  unfold fenchelBiconjugate
+  apply iSup_le
+  intro v
+  apply EReal.sub_le_of_le_add
+  exact fenchel_young f v x h1 h2
+
 #min_imports
