@@ -8,7 +8,6 @@ set_option linter.style.header false
 ## TODO
 - Replace the definition of `fenchelConjugate` to apply on the dual space of `E`
 - Organise things better e.g. structure for EReal function, sections
-- Get rid of `h1` in `fenchel_young`
 -/
 
 local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
@@ -38,7 +37,7 @@ lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
   have h1 : (f x).toReal = f x := EReal.coe_toReal ht hb
   unfold fenchelConjugate
   apply ne_of_gt
-  rw [@bot_lt_iSup]
+  rw [bot_lt_iSup]
   use x
   rw [← h1]
   exact compareOfLessAndEq_eq_lt.mp rfl
