@@ -8,6 +8,7 @@ set_option linter.style.header false
 ## TODO
 - Replace the definition of `fenchelConjugate` to apply on the dual space of `E`
 - Organise things better e.g. structure for EReal function, sections
+- Figure out naming conventions
 -/
 
 local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
@@ -18,13 +19,10 @@ variable (f : E → EReal)
 -- The effective domain of `f`
 def dom : Set E := {x : E | f x ≠ ⊤ ∧ f x ≠ ⊥}
 
--- The epigraph of `f`
-def epi : Set (E × ℝ) := {p | f p.1 ≤ p.2}
-
 -- A function `f` is proper if its domain is nonempty
 def IsProper : Prop := dom f ≠ ∅
 
--- The Fenchel conjugate of `f : E → EReal`
+-- The Fenchel conjugate of `f : E → EReal`: f∗(v) = sup_{x ∈ E} ⟨v,x⟩-f(x)
 noncomputable def fenchelConjugate (v : E) : EReal := ⨆ x : E, ⟪v, x⟫ - f x
 
 -- Notation for the Fenchel conjugate: `f∗`
@@ -51,12 +49,13 @@ theorem fenchel_young (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : ⟪v,x⟫
   rw[add_comm]
   exact h3
 
--- The Fenchel biconjugate of `f : E → EReal`
+-- The Fenchel biconjugate of `f : E → EReal`: f∗∗(x) = sup_{v ∈ E} ⟨v,x⟩-f∗(v)
 noncomputable def fenchelBiconjugate (x : E) : EReal := ⨆ v : E, ⟪v, x⟫ - f∗ v
 
 -- Notation for the Fenchel biconjugate: `f∗∗`
 local postfix:max "∗∗" => fenchelBiconjugate
 
+-- The Fenchel biconjugate of a proper function `f : E → EReal` is less than or equal to `f`
 -- Assuming we make the same assumptions as in the Fenchel-Young inequality?
 theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f∗∗ x ≤ f x := by
   unfold fenchelBiconjugate
@@ -65,4 +64,6 @@ theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f�
   apply EReal.sub_le_of_le_add
   exact fenchel_young f v x h1 h2
 
+-- The epigraph of `f`
+def epi : Set (E × ℝ) := {p | f p.1 ≤ p.2}
 #min_imports
