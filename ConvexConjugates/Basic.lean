@@ -1,4 +1,5 @@
 import Mathlib.Analysis.InnerProductSpace.Defs
+import Mathlib.Analysis.InnerProductSpace.Basic
 
 set_option linter.style.header false
 
@@ -63,6 +64,39 @@ theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f�
   intro v
   apply EReal.sub_le_of_le_add
   exact fenchel_young f v x h1 h2
+
+-- Based on https://github.com/optsuite/optlib/blob/main/Optlib/Convex/Subgradient.lean
+def IsSubgradient (v x : E) : Prop := ∀ y, ⟪v, y - x⟫ ≤ f y - f x
+
+def subdifferential (x : E) : Set E := {v : E | IsSubgradient f v x}
+
+local prefix:max "∂" => subdifferential
+
+theorem mem_subdifferential : IsSubgradient f v x ↔ v ∈ ∂f x := ⟨id, id⟩
+
+-- Helper while trying to figure out this mess
+lemma EReal.inner_sub_right' (v x y : E) : (⟪v, y - x⟫ : EReal) = ⟪v, y⟫ - ⟪v, x⟫ := by
+  rw [inner_sub_right, EReal.coe_sub]
+
+-- Trying to break it down into something more manageable
+theorem some_name (v : E) (x : dom f) (h1 : IsProper f) (h2 : v ∈ ∂f x) : f x + f∗ v ≤ ⟪v,x⟫ := by
+  rw[← mem_subdifferential] at h2
+  rw[add_comm]
+  rw [← EReal.le_sub_iff_add_le (Or.inl x.2.2) (Or.inr (by simp))]
+  apply iSup_le
+  intro y
+  unfold IsSubgradient at h2
+  specialize h2 y
+  sorry
+  -- It seems impossible to move anything around because I think f(y) can be ∞ or -∞.
+  -- Probably need to split into cases or I've done something wrong
+
+
+
+
+
+
+
 
 -- The epigraph of `f`
 def epi : Set (E × ℝ) := {p | f p.1 ≤ p.2}
