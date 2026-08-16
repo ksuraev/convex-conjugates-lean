@@ -50,6 +50,7 @@ lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
 
 -- Fenchel-Young inequality for a proper function `f : E → EReal`
 theorem fenchel_young (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : ⟪v,x⟫ ≤ f x + f∗ v := by
+  -- f∗ v = sup_{x ∈ E} ⟨v,x⟩ - f(x) ≥ ⟨v,x⟫ - f(x)
   have h3 : f∗ v ≥ ⟪v,x⟫ - f x := by
     exact le_iSup_iff.mpr fun b a ↦ a x
   rw[ge_iff_le] at h3
@@ -119,6 +120,7 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x →
     rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))] at hv
     -- `f y - f x + ⟪v,x⟫ = ⟪v,x⟫ + (f y - f x)`
     rw[add_comm] at hv
+    -- The next 3 can be moved into a single rewrite but just left it as is for now
     -- `-f x + f y = + -f x + f y`
     rw[sub_eq_add_neg]
     -- `+ -f x + f y = f y + -f x`
