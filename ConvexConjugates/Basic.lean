@@ -86,6 +86,7 @@ theorem mem_subdifferential : IsSubgradient f v x ↔ v ∈ ∂f x := ⟨id, id�
 lemma EReal.inner_sub_right' (v x y : E) : (⟪v, y - x⟫ : EReal) = ⟪v, y⟫ - ⟪v, x⟫ := by
   rw [inner_sub_right, EReal.coe_sub]
 
+-- First direction of Fenchel-Young equality
 theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x → f x + f∗ v = ⟪v,x⟫ := by
   -- Assume v ∈ ∂f x
   intro hv
