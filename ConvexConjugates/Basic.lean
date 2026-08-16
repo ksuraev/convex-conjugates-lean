@@ -107,15 +107,13 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x →
     apply iSup_le
     -- Assume y ∈ E is arbitrary. Goal is now `⟪v,y⟫ - f y ≤ ⟪v,x⟫ - f x`
     intro y
-    -- Rewrite `v ∈ ∂f x` as `v` is a subgradient of `f` at `x`
-    rw[← mem_subdifferential] at hv
     -- Replace universal quantifier with a specific y giving `hv : ⟪v, y-x⟫ ≤ f y - f x`
     specialize hv y
+    -- Rewrite `⟪v, y-x⟫` as `⟪v,y⟫ - ⟪v,x⟫`
+    rw [EReal.inner_sub_right'] at hv
     -- Move f y to the other side of the inequality
     apply EReal.sub_le_of_le_add
     -- All of this seems very cumbersome (bunch of rewrites) - maybe there's a nicer way?
-    -- Rewrite `⟪v, y-x⟫` as `⟪v,y⟫ - ⟪v,x⟫`
-    rw [EReal.inner_sub_right'] at hv
     -- Use `⟪v,x⟫ ≠ ⊥` and `⟪v,x⟫ ≠ ⊤` to move `⟪v,x⟫` to the other side of the inequality
     rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))] at hv
     -- `f y - f x + ⟪v,x⟫ = ⟪v,x⟫ + (f y - f x)`
@@ -131,7 +129,6 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x →
   · -- Case 2: `f x + f∗ v ≥ ⟪v,x⟫`
     -- Use the Fenchel-Young inequality
     exact fenchel_young f v x x.2.2 h
-
 
 -- The epigraph of `f`
 def epi : Set (E × ℝ) := {p | f p.1 ≤ p.2}
