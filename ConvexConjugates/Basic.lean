@@ -39,7 +39,7 @@ lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
   rw [bot_lt_iSup]
   use x
   rw [← h1]
-  -- Definition (Init.Data.Ord.Basic): uses decidable less-than and equality relations to find an `Ordering`
+  -- From Init.Data.Ord.Basic: uses decidable less-than and equality relations to find an `Ordering`
   -- Gives a 'less than' ordering iff x < y - clearly ⊥ < ⟪v,x⟫ - f x, since ⊥ < ⟪v,x⟫ and f x ≠ ⊥
   exact compareOfLessAndEq_eq_lt.mp rfl
   -- Alternative if above line is deleted
@@ -112,6 +112,7 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x →
     specialize hv y
     -- Move f y to the other side of the inequality
     apply EReal.sub_le_of_le_add
+    -- All of this seems very cumbersome (bunch of rewrites) - maybe there's a nicer way?
     -- Rewrite `⟪v, y-x⟫` as `⟪v,y⟫ - ⟪v,x⟫`
     rw [EReal.inner_sub_right'] at hv
     -- Use `⟪v,x⟫ ≠ ⊥` and `⟪v,x⟫ ≠ ⊤` to move `⟪v,x⟫` to the other side of the inequality
