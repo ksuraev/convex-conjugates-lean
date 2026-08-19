@@ -3,6 +3,7 @@ import Mathlib.Analysis.InnerProductSpace.Basic
 
 set_option linter.style.header false
 set_option linter.style.longLine false
+set_option pp.parens true
 
 /-!
 # Convex Conjugates
@@ -32,13 +33,19 @@ local postfix:max "∗" => fenchelConjugate
 
 -- If a function `f` is proper, then its Fenchel conjugate is not `-∞`
 lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
+  -- Assume that the function `f` is proper
   intro h
-  obtain ⟨x, ht, hb⟩ := Set.nonempty_iff_ne_empty.mpr h
-  have h1 : (f x).toReal = f x := EReal.coe_toReal ht hb
+  -- The Fenchel conjugate, defined as sup_{x∈E} ⟨v,x⟩-f(x)
   unfold fenchelConjugate
+  -- Apply the fact that if `x<y` then `x≠y`
   apply ne_of_gt
+  -- -∞ < sup_{i} s_i iff ∃ i: -∞ < s_i.
   rw [bot_lt_iSup]
+  -- Indeed, since the domain is nonempty there exists x such that f(x)<∞ and f(x)>-∞.
+  obtain ⟨x, ht, hb⟩ := Set.nonempty_iff_ne_empty.mpr h
   use x
+  -- Since f(x)≠-∞  and f(x)≠+∞, then f(x) is a real number.
+  have h1 : (f x).toReal = f x := EReal.coe_toReal ht hb
   rw [← h1]
   -- From Init.Data.Ord.Basic: uses decidable less-than and equality relations to find an `Ordering`
   -- Gives a 'less than' ordering iff x < y - clearly ⊥ < ⟪v,x⟫ - f x, since ⊥ < ⟪v,x⟫ and f x ≠ ⊥
@@ -55,10 +62,7 @@ theorem fenchel_young (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : ⟪v,x⟫
   exact h3
 
 -- The Fenchel biconjugate of `f` is the conjugate of the conjugate of `f`
-noncomputable def fenchelBiconjugate (x : E) : EReal := (f∗)∗ x
-
--- Notation for the Fenchel biconjugate: `f∗∗`
-local postfix:max "∗∗" => fenchelBiconjugate
+noncomputable def fenchelBiconjugate (x : E) : EReal := f∗∗ x
 
 -- The Fenchel biconjugate of `f` can be expressed as a supremum over `v ∈ E`
 lemma fenchelBiconjugate_eq_sup (x : E) : f∗∗ x = ⨆ v, ⟪v, x⟫ - f∗ v := by
@@ -107,8 +111,7 @@ lemma EReal.inner_sub_right' (v x y : E) : (⟪v, y - x⟫ : EReal) = ⟪v, y⟫
 theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x → f x + f∗ v = ⟪v,x⟫ := by
   -- Assume `v ∈ ∂f x`
   intro hv
-  have h_ne : ∂f x ≠ ∅ := by
-    exact ne_of_mem_of_not_mem' hv fun a ↦ a
+  have h_ne : ∂f x ≠ ∅ := by exact ne_of_mem_of_not_mem' hv fun a ↦ a -- Trying to see if this simplifies things
   -- Split into two inequalities: `f x + f∗ v ≤ ⟪v,x⟫` and `f x + f∗ v ≥ ⟪v,x⟫`
   apply le_antisymm
   · -- Case 1: `f x + f∗ v ≤ ⟪v,x⟫`
@@ -121,12 +124,11 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x →
     intro y
     -- Replace universal quantifier with a specific y giving `hv : ⟪v, y-x⟫ ≤ f y - f x`
     specialize hv y
-    have h_fy : f y ≠ ⊥ := by apply subdifferential_nonempty_f_ne_bot f h_ne
+    have h_fy : f y ≠ ⊥ := by apply subdifferential_nonempty_f_ne_bot f h_ne -- Also trying to see if this simplifies things
     -- Rewrite `⟪v, y-x⟫` as `⟪v,y⟫ - ⟪v,x⟫`
     rw [EReal.inner_sub_right'] at hv
     -- Move f y to the other side of the inequality
     apply EReal.sub_le_of_le_add
-    -- All of this seems very cumbersome (bunch of rewrites) - maybe there's a nicer way?
     -- Use `⟪v,x⟫ ≠ ⊥` and `⟪v,x⟫ ≠ ⊤` to move `⟪v,x⟫` to the other side of the inequality
     rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))] at hv
     -- `f y - f x + ⟪v,x⟫ = ⟪v,x⟫ + (f y - f x)`
