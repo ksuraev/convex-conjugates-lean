@@ -44,8 +44,7 @@ lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
   obtain ⟨x, ht, hb⟩ := Set.nonempty_iff_ne_empty.mpr h
   use x
   -- Since `f(x)≠-∞` and `f(x)≠+∞`, then `f(x)` is a real number.
-  have h1 : (f x).toReal = f x := EReal.coe_toReal ht hb
-  rw [← h1]
+  rw[← EReal.coe_toReal ht hb]
   -- From Init.Data.Ord.Basic: uses decidable less-than and equality relations to find an `Ordering`
   -- Gives a 'less than' ordering iff `x < y`. Clearly `⊥ < ⟪v,x⟫ - f x`, since `⊥ < ⟪v,x⟫` and `f x < ⊥`
   exact compareOfLessAndEq_eq_lt.mp rfl
@@ -115,6 +114,20 @@ lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ 
   rw[h_fy, EReal.bot_sub] at hv
   -- Since `⊥ < ⟪v,y⟫ - ⟪v,x⟫`, we have a contradiction
   contradiction
+
+-- If it's cheating below to rewrite the equality then can use this
+-- Actually ended up finding much nicer ways to move stuff around by doing this
+lemma fenchel_young_eq_sub (v : E) (x : dom f) : f x + f∗ v = ⟪v,x⟫ ↔ f∗ v = ⟪v,x⟫ - f x := by
+  constructor
+  · intro h
+    rw[← h]
+    rw[← EReal.coe_toReal x.2.1 x.2.2]
+    rw [EReal.add_sub_cancel_left]
+  · intro h
+    rw[h]
+    rw[← EReal.coe_toReal x.2.1 x.2.2]
+    rw [add_sub]
+    rw [EReal.add_sub_cancel_left]
 
 -- Forward direction of Fenchel-Young equality
 theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x → f∗ v = ⟪v,x⟫ - f x := by
