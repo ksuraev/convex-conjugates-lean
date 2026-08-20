@@ -111,10 +111,6 @@ lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ 
   rw[fy, EReal.bot_sub] at hv
   contradiction
 
--- inner_sub_right, restated after coercing to EReal
-lemma EReal.inner_sub_right' (v x y : E) : (⟪v, y - x⟫ : EReal) = ⟪v, y⟫ - ⟪v, x⟫ := by
-  rw [inner_sub_right, EReal.coe_sub]
-
 -- Forward direction of Fenchel-Young equality
 theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x → f x + f∗ v = ⟪v,x⟫ := by
   -- Assume `v ∈ ∂f x`
