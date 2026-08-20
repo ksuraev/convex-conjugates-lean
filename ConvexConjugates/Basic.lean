@@ -118,29 +118,27 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x →
     rw[add_comm]
     -- Use `f x ≠ ⊥` and `⟪v,x⟫ ≠ ⊤` to move `f x` to the other side of the inequality
     rw [← EReal.le_sub_iff_add_le (Or.inl x.2.2) (Or.inr (EReal.coe_ne_top ⟪v,x⟫))]
-    -- Change the goal to a universal quantifier over y ∈ E
     apply iSup_le
-    -- Assume y ∈ E is arbitrary
     intro y
-    -- Replace universal quantifier with a specific y giving `hv : ⟪v, y-x⟫ ≤ f y - f x`
     specialize hv y
     have h_fy : f y ≠ ⊥ := by apply subdifferential_nonempty_f_ne_bot f h_ne -- Also trying to see if this simplifies things
-    -- Rewrite `⟪v, y-x⟫` as `⟪v,y⟫ - ⟪v,x⟫`
     rw [EReal.inner_sub_right'] at hv
-    -- Move f y to the other side of the inequality
     apply EReal.sub_le_of_le_add
     -- Use `⟪v,x⟫ ≠ ⊥` and `⟪v,x⟫ ≠ ⊤` to move `⟪v,x⟫` to the other side of the inequality
     rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))] at hv
-    -- `f y - f x + ⟪v,x⟫ = ⟪v,x⟫ + (f y - f x)`
-    rw[add_comm] at hv
-    -- The next 3 can be moved into a single rewrite but just left it as is for now
-    -- `-f x + f y = + -f x + f y`
-    rw[sub_eq_add_neg]
-    -- `+ -f x + f y = f y + -f x`
-    rw [add_right_comm]
-    -- `f y + -f x = (f y + -f x)`
-    rw [add_assoc]
-    exact hv
+    -- Alternative to below
+    simp only [sub_eq_add_neg] at *
+    grind
+    -- -- `f y - f x + ⟪v,x⟫ = ⟪v,x⟫ + (f y - f x)`
+    -- rw[add_comm] at hv
+    -- -- The next 3 can be moved into a single rewrite but just left it as is for now
+    -- -- `-f x + f y = + -f x + f y`
+    -- rw[sub_eq_add_neg]
+    -- -- `+ -f x + f y = f y + -f x`
+    -- rw [add_right_comm]
+    -- -- `f y + -f x = (f y + -f x)`
+    -- rw [add_assoc]
+    -- exact hv
   · -- Case 2: `f x + f∗ v ≥ ⟪v,x⟫`
     -- Use the Fenchel-Young inequality
     exact fenchel_young f v x x.2.2 h
