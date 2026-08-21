@@ -11,6 +11,8 @@ set_option linter.style.longLine false
 - Replace the definition of `fenchelConjugate` to apply on the dual space of `E`
 - Organise things better e.g. structure for EReal function, sections
 - Figure out naming conventions
+- Write proper header for file - overview, key declarations, references
+- Discuss whether to redefine the domain as the set of x where f(x) is real
 -/
 
 local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
@@ -51,12 +53,12 @@ lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
 
 -- Fenchel-Young inequality for a proper function `f : E → EReal`
 theorem fenchel_young (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : ⟪v,x⟫ ≤ f x + f∗ v := by
-  -- f∗ v = sup_{x ∈ E} ⟨v,x⟩ - f(x) ≥ ⟨v,x⟫ - f(x)
+  -- f∗(v) = sup_{x ∈ E} ⟨v,x⟩ - f(x) ≥ ⟨v,x⟫ - f(x)
   have h3 : f∗ v ≥ ⟪v,x⟫ - f x := by
     exact le_iSup_iff.mpr fun b a ↦ a x
   -- Write h3 as ⟪v,x⟫ - f(x) ≤ f∗ v
   rw[ge_iff_le] at h3
-  -- Since f(x) ≠ -∞ and f∗ v ≠ -∞, we can add f(x) to both sides of the inequality
+  -- Since f(x) ≠ -∞ and f∗(v) ≠ -∞, we can add f(x) to both sides of the inequality
   rw [EReal.sub_le_iff_le_add (Or.inl h1) (Or.inr (fenchelConjugate_ne_bot f v h2))] at h3
   -- Commute the addition to get ⟪v,x⟫ ≤ f(x) + f∗ v
   rw[add_comm]
@@ -117,7 +119,7 @@ lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ 
 
 -- If it's cheating below to rewrite the equality then can use this
 -- Actually ended up finding much nicer ways to move stuff around by doing this
-lemma fenchel_young_eq_sub (v : E) (x : dom f) : f x + f∗ v = ⟪v,x⟫ ↔ f∗ v = ⟪v,x⟫ - f x := by
+lemma fenchelConjugate_sub_iff_add_eq (v : E) (x : dom f) : f x + f∗ v = ⟪v,x⟫ ↔ f∗ v = ⟪v,x⟫ - f x := by
   constructor
   · intro h
     rw[← h]
@@ -130,12 +132,14 @@ lemma fenchel_young_eq_sub (v : E) (x : dom f) : f x + f∗ v = ⟪v,x⟫ ↔ f�
     rw [EReal.add_sub_cancel_left]
 
 -- Forward direction of Fenchel-Young equality
-theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x → f∗ v = ⟪v,x⟫ - f x := by
+theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x → f x + f∗ v = ⟪v,x⟫ := by
   -- Assume `v ∈ ∂f x`
   intro hv
-  -- Split into two inequalities: `f(x) + f∗(v) ≤ ⟪v,x⟫` and `f(x) + f∗(v) ≥ ⟪v,x⟫`
+  -- Apply the equivalence between `f(x) + f∗(v) = ⟪v,x⟫` and `f∗(v) = ⟪v,x⟫ - f(x)`
+  rw[fenchelConjugate_sub_iff_add_eq f v x]
+  -- Split into two inequalities: `f∗(v) ≤ ⟪v,x⟫ - f(x)` and `⟪v,x⟫ - f(x) ≤ f∗(v)`
   apply le_antisymm
-  · -- Case 1: `f(x) + f∗(v) ≤ ⟪v,x⟫`
+  · -- Case 1: `f∗(v) ≤ ⟪v,x⟫ - f(x)`
     -- Since the supremum of ⟪v,y⟫ - f(y) over all y ∈ E is ≤ ⟪v,x⟫ - f(x) then ∀ y, ⟪v,y⟫ - f(y) ≤ ⟪v,x⟫ - f(x)
     apply iSup_le
     intro y
@@ -149,7 +153,7 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x →
     simp only [sub_eq_add_neg] at *
     -- Apply associativity and commutativity of addition
     grind => ac
-  · -- Case 2: `f x + f∗(v) ≥ ⟪v,x⟫`
+  · -- Case 2: `⟪v,x⟫ - f(x) ≤ f∗(v)`
     -- Use f(x) ≠ ⊥ and f(x) ≠ ⊤ to move f(x) to the other side of the inequality
     rw [(EReal.sub_le_iff_le_add (Or.inl x.2.2) (Or.inl x.2.1))]
     rw[add_comm]
@@ -159,10 +163,12 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x →
 
 -- This actually was many hours of disaster and I feel like it's wrong
 -- Reverse direction of Fenchel-Young equality
-theorem fenchel_young_eq' (v : E) (x : dom f) (h : IsProper f) : f∗ v = ⟪v,x⟫ - f x → v ∈ ∂f x := by
+theorem fenchel_young_eq' (v : E) (x : dom f) (h : IsProper f) : f x + f∗ v = ⟪v,x⟫ → v ∈ ∂f x := by
   intro h_eq y
+  -- Rewrite the equality `f x + f∗ v = ⟪v,x⟫` as `f∗ v = ⟪v,x⟫ - f x`
+  rw [fenchelConjugate_sub_iff_add_eq f v x] at h_eq
   -- Use the definition of the Fenchel conjugate to get ⟪v,y⟫ - f y ≤ f∗ v
-  have hle : ⟪v,y⟫ - f y ≤ f∗ v:= by exact le_iSup_iff.mpr fun b a ↦ a y
+  have h_le : ⟪v,y⟫ - f y ≤ f∗ v:= by exact le_iSup_iff.mpr fun b a ↦ a y
   -- Move ⟪v,x⟫ to the other side of the inequality
   rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))]
   -- Do a bunch more rearranging to get ⟪v,x⟫ - f x together
@@ -179,12 +185,12 @@ theorem fenchel_young_eq' (v : E) (x : dom f) (h : IsProper f) : f∗ v = ⟪v,x
     exact EReal.coe_ne_top (⟪v,x⟫ - (f x).toReal)
   -- Show that f∗ v ≠ ⊥
   have h_ne_bot : f∗ v ≠ ⊥ := by exact fenchelConjugate_ne_bot f v h
-  -- Move f(y) to the other side of the inequality in hle to get ⟪v,y⟫ ≤ f∗ v + f(y)
-  rw [EReal.sub_le_iff_le_add (Or.inr h_ne_top) (Or.inr h_ne_bot)] at hle
-  exact hle
+  -- Move f(y) to the other side of the inequality in h_le to get ⟪v,y⟫ ≤ f∗ v + f(y)
+  rw [EReal.sub_le_iff_le_add (Or.inr h_ne_top) (Or.inr h_ne_bot)] at h_le
+  exact h_le
 
 -- Combined
-theorem fenchel_young_eq_iff (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x ↔ f∗ v = ⟪v,x⟫ - f x := by
+theorem fenchel_young_eq_iff (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x ↔ f x + f∗ v = ⟪v,x⟫ := by
   apply Iff.intro
   · exact fenchel_young_eq f v x h
   · exact fenchel_young_eq' f v x h
