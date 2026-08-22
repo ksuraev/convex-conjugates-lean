@@ -29,7 +29,7 @@ def IsProper : Prop := dom f ≠ ∅
 -- The Fenchel conjugate of `f : E → EReal`: f∗(v) = sup_{x ∈ E} ⟨v,x⟩-f(x)
 noncomputable def fenchelConjugate (v : E) : EReal := ⨆ x : E, ⟪v, x⟫ - f x
 
--- Notation for the Fenchel conjugate: `f∗`
+-- Notation for the Fenchel conjugate of f: `f∗`
 local postfix:max "∗" => fenchelConjugate
 
 -- If a function `f` is proper, then its Fenchel conjugate is not `-∞`
@@ -54,14 +54,14 @@ lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
 -- Fenchel-Young inequality for a proper function `f : E → EReal`
 theorem fenchel_young (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : ⟪v,x⟫ ≤ f x + f∗ v := by
   -- f∗(v) = sup_{x ∈ E} ⟨v,x⟩ - f(x) ≥ ⟨v,x⟫ - f(x)
-  have h3 : f∗ v ≥ ⟪v,x⟫ - f x := by
-    exact le_iSup_iff.mpr fun b a ↦ a x
+  have h3 : f∗ v ≥ ⟪v,x⟫ - f x := by exact le_iSup_iff.mpr fun b a ↦ a x
   -- Write h3 as ⟪v,x⟫ - f(x) ≤ f∗ v
   rw[ge_iff_le] at h3
   -- Since f(x) ≠ -∞ and f∗(v) ≠ -∞, we can add f(x) to both sides of the inequality
   rw [EReal.sub_le_iff_le_add (Or.inl h1) (Or.inr (fenchelConjugate_ne_bot f v h2))] at h3
   -- Commute the addition to get ⟪v,x⟫ ≤ f(x) + f∗ v
   rw[add_comm]
+  -- Conclude the proof with the final inequality
   exact h3
 
 -- The Fenchel biconjugate of `f` is the conjugate of the conjugate of `f`
@@ -104,7 +104,7 @@ local prefix:max "∂" => subdifferential
 -- `v` is a subgradient of `f` at `x` iff `v` is in the subdifferential of `f` at `x`
 -- theorem mem_subdifferential : IsSubgradient f v x ↔ v ∈ ∂f x := ⟨id, id⟩
 
--- coming up with names is hard
+-- The subdifferential of a proper function `f` at `x` is nonempty if `f(y) ≠ ⊥` for all `y ∈ E`
 lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ ⊥ := by
   -- Assume that `∂f x ≠ ∅`, `y ∈ E`, and `f y = ⊥`
   intro h_ne y h_fy
@@ -117,22 +117,32 @@ lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ 
   -- Since `⊥ < ⟪v,y⟫ - ⟪v,x⟫`, we have a contradiction
   contradiction
 
--- If it's cheating below to rewrite the equality then can use this
--- Actually ended up finding much nicer ways to move stuff around by doing this
+
+-- The Fenchel-Young equality: `f(x) + f∗(v) = ⟪v,x⟫` iff `f∗(v) = ⟪v,x⟫ - f(x)`
 lemma fenchelConjugate_sub_iff_add_eq (v : E) (x : dom f) : f x + f∗ v = ⟪v,x⟫ ↔ f∗ v = ⟪v,x⟫ - f x := by
-  constructor
-  · intro h
+  -- Split the equivalence into two implications
+  apply Iff.intro
+  · -- (→) Assume f(x) + f∗(v) = ⟪v,x⟫
+    intro h
+    -- Rewrite ⟪v,x⟫ as f x + f∗ v to get f∗(v) = f(x) + f∗(v) - f(x)
     rw[← h]
+    -- Since f(x) ≠ ⊥ and f(x) ≠ ⊤, f(x) is a real number
     rw[← EReal.coe_toReal x.2.1 x.2.2]
+    -- Cancel f(x) to get f∗(v) = f∗(v)
     rw [EReal.add_sub_cancel_left]
-  · intro h
+  · -- (←) Assume f∗(v) = ⟪v,x⟫ - f(x)
+    intro h
+    -- Rewrite f∗ v as ⟪v,x⟫ - f x
     rw[h]
     rw[← EReal.coe_toReal x.2.1 x.2.2]
+    -- Rewrite the left-hand side using the fact that a + (b - c) = a + b - c
     rw [add_sub]
+    -- Cancel f(x) to get ⟪v,x⟫ = ⟪v,x⟫
     rw [EReal.add_sub_cancel_left]
 
--- Forward direction of Fenchel-Young equality
-theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x → f x + f∗ v = ⟪v,x⟫ := by
+
+-- If `v` is a subgradient of `f` at `x`, then `f(x) + f∗(v) = ⟪v,x⟫`
+theorem fenchel_young_eq.mp (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x → f x + f∗ v = ⟪v,x⟫ := by
   -- Assume `v ∈ ∂f x`
   intro hv
   -- Apply the equivalence between `f(x) + f∗(v) = ⟪v,x⟫` and `f∗(v) = ⟪v,x⟫ - f(x)`
@@ -161,21 +171,19 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x →
     exact fenchel_young f v x x.2.2 h
 
 
--- This actually was many hours of disaster and I feel like it's wrong
--- Reverse direction of Fenchel-Young equality
-theorem fenchel_young_eq' (v : E) (x : dom f) (h : IsProper f) : f x + f∗ v = ⟪v,x⟫ → v ∈ ∂f x := by
+-- If `f(x) + f∗(v) = ⟪v,x⟫`, then `v` is a subgradient of `f` at `x`
+theorem fenchel_young_eq.mpr (v : E) (x : dom f) (h : IsProper f) : f x + f∗ v = ⟪v,x⟫ → v ∈ ∂f x := by
+  -- Assume f(x) + f∗(v) = ⟪v,x⟫ and y ∈ E in the subgradient inequality
   intro h_eq y
-  -- Rewrite the equality `f x + f∗ v = ⟪v,x⟫` as `f∗ v = ⟪v,x⟫ - f x`
+  -- Rewrite the equality `f x + f∗ v = ⟪v,x⟫` as `f∗ v = ⟪v,x⟫ - f x` at h_eq
   rw [fenchelConjugate_sub_iff_add_eq f v x] at h_eq
-  -- Use the definition of the Fenchel conjugate to get ⟪v,y⟫ - f y ≤ f∗ v
-  have h_le : ⟪v,y⟫ - f y ≤ f∗ v:= by exact le_iSup_iff.mpr fun b a ↦ a y
-  -- Move ⟪v,x⟫ to the other side of the inequality
+  -- Add ⟪v,x⟫ to both sides of the subgradient inequality
   rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))]
-  -- Do a bunch more rearranging to get ⟪v,x⟫ - f x together
+  -- Rewrite to group ⟪v,x⟫ - f(x) together
   rw[sub_eq_add_neg, add_assoc, add_comm (-f x), ← sub_eq_add_neg]
-  -- Substitute ⟪v,x⟫ - f x = f∗ v
+  -- Substitute ⟪v,x⟫ - f(x) = f∗(v)
   rw[← h_eq, add_comm]
-  -- Show that f∗ v ≠ ⊤
+  -- Show that f∗(v) ≠ ⊤
   have h_ne_top : f∗ v ≠ ⊤ := by
     -- ⟪v,x⟫ - f(x) ≠ ⊤
     rw [h_eq]
@@ -183,17 +191,20 @@ theorem fenchel_young_eq' (v : E) (x : dom f) (h : IsProper f) : f x + f∗ v = 
     rw[← EReal.coe_toReal x.2.1 x.2.2]
     -- A real number is not equal to ⊤
     exact EReal.coe_ne_top (⟪v,x⟫ - (f x).toReal)
-  -- Show that f∗ v ≠ ⊥
+  -- Show that f∗(v) ≠ ⊥
   have h_ne_bot : f∗ v ≠ ⊥ := by exact fenchelConjugate_ne_bot f v h
-  -- Move f(y) to the other side of the inequality in h_le to get ⟪v,y⟫ ≤ f∗ v + f(y)
+  -- ⟪v,y⟫ - f(y) ≤ sup_{y ∈ E} ⟨v,y⟩ - f(y) = f∗(v)
+  have h_le : ⟪v,y⟫ - f y ≤ f∗ v:= by exact le_iSup_iff.mpr fun b a ↦ a y
+  -- Add f(y) to both sides of the inequality in h_le to get ⟪v,y⟫ ≤ f∗(v) + f(y)
   rw [EReal.sub_le_iff_le_add (Or.inr h_ne_top) (Or.inr h_ne_bot)] at h_le
+  -- Our goal is exactly h_le
   exact h_le
 
--- Combined
-theorem fenchel_young_eq_iff (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x ↔ f x + f∗ v = ⟪v,x⟫ := by
+-- The Fenchel-Young equality: `v` is a subgradient of `f` at `x` iff `f(x) + f∗(v) = ⟪v,x⟫`
+theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x ↔ f x + f∗ v = ⟪v,x⟫ := by
   apply Iff.intro
-  · exact fenchel_young_eq f v x h
-  · exact fenchel_young_eq' f v x h
+  · exact fenchel_young_eq.mp f v x h
+  · exact fenchel_young_eq.mpr f v x h
 
 
 
