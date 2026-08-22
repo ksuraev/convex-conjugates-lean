@@ -20,13 +20,13 @@ local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 variable (f : E → EReal)
 
--- The effective domain of `f`
+/-- The effective domain of a function `f : E → EReal` is the set of points `x ∈ E` where `f(x)` is finite (i.e., not equal to `+∞` or `-∞`). -/
 def dom : Set E := {x : E | f x ≠ ⊤ ∧ f x ≠ ⊥}
 
--- A function `f` is proper if its domain is nonempty
+/-- A function `f` is proper if its domain is nonempty. -/
 def IsProper : Prop := dom f ≠ ∅
 
--- The Fenchel conjugate of `f : E → EReal`: f∗(v) = sup_{x ∈ E} ⟨v,x⟩-f(x)
+/-- The Fenchel conjugate of a function `f : E → EReal` is defined as the supremum over all `x ∈ E` of `⟪v,x⟫ - f(x)`. -/
 noncomputable def fenchelConjugate (v : E) : EReal := ⨆ x : E, ⟪v, x⟫ - f x
 
 -- Notation for the Fenchel conjugate of f: `f∗`
@@ -51,7 +51,7 @@ lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
   -- Gives a 'less than' ordering iff `x < y`. Clearly `⊥ < ⟪v,x⟫ - f x`, since `⊥ < ⟪v,x⟫` and `f x < ⊥`
   exact compareOfLessAndEq_eq_lt.mp rfl
 
--- Fenchel-Young inequality for a proper function `f : E → EReal`
+/-- For a proper function `f : E → EReal`, the Fenchel-Young inequality states that for any `v ∈ E` and `x ∈ dom f`, we have `⟪v,x⟫ ≤ f(x) + f∗(v)`. -/
 theorem fenchel_young (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : ⟪v,x⟫ ≤ f x + f∗ v := by
   -- f∗(v) = sup_{x ∈ E} ⟨v,x⟩ - f(x) ≥ ⟨v,x⟫ - f(x)
   have h3 : f∗ v ≥ ⟪v,x⟫ - f x := by exact le_iSup_iff.mpr fun b a ↦ a x
@@ -64,16 +64,16 @@ theorem fenchel_young (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : ⟪v,x⟫
   -- Conclude the proof with the final inequality
   exact h3
 
--- The Fenchel biconjugate of `f` is the conjugate of the conjugate of `f`
+/-- The Fenchel biconjugate of a function `f : E → EReal` is the Fenchel conjugate of the Fenchel conjugate of `f`. -/
 noncomputable def fenchelBiconjugate (x : E) : EReal := f∗∗ x
 
--- The Fenchel biconjugate of `f` can be expressed as a supremum over `v ∈ E`
+-- The Fenchel biconjugate of `f` is expressed as a supremum over `v ∈ E`
 lemma fenchelBiconjugate_eq_sup (x : E) : f∗∗ x = ⨆ v, ⟪v, x⟫ - f∗ v := by
   conv in ⟪_,_⟫ =>
    rw [real_inner_comm]
   rfl
 
--- The Fenchel biconjugate of a proper function `f : E → EReal` is less than or equal to `f`
+/-- The Fenchel biconjugate of a proper function `f : E → EReal` is less than or equal to `f`. -/
 theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f∗∗ x ≤ f x := by
   -- Write `f∗∗ x` as a supremum over `v ∈ E`
   rw[fenchelBiconjugate_eq_sup]
@@ -91,18 +91,14 @@ theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f�
 https://github.com/optsuite/optlib/blob/main/Optlib/Convex/Subgradient.lean
 -/
 
--- `v` is a subgradient of `f` at `x` if `∀ y, ⟪v, y⟫ - ⟪v,x⟫ ≤ f(y) - f(x)`
+/-- A vector `v` is a subgradient of a function `f` at a point `x` if for all `y`, `⟪v, y⟫ - ⟪v,x⟫ ≤ f(y) - f(x)`. -/
 def IsSubgradient (v x : E) : Prop := ∀ y, ⟪v, y⟫ - ⟪v,x⟫ ≤ f y - f x
 
--- The subdifferential of `f` at `x` is the set of all subgradients of `f` at `x`
+/-- The subdifferential of a function `f` at a point `x` is the set of all subgradients of `f` at `x`. -/
 def subdifferential (x : E) : Set E := {v : E | IsSubgradient f v x}
 
 -- Notation for the subdifferential: `∂f`
 local prefix:max "∂" => subdifferential
-
--- unused for now
--- `v` is a subgradient of `f` at `x` iff `v` is in the subdifferential of `f` at `x`
--- theorem mem_subdifferential : IsSubgradient f v x ↔ v ∈ ∂f x := ⟨id, id⟩
 
 -- The subdifferential of a proper function `f` at `x` is nonempty if `f(y) ≠ ⊥` for all `y ∈ E`
 lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ ⊥ := by
@@ -116,7 +112,6 @@ lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ 
   rw[h_fy, EReal.bot_sub] at hv
   -- Since `⊥ < ⟪v,y⟫ - ⟪v,x⟫`, we have a contradiction
   contradiction
-
 
 -- The Fenchel-Young equality: `f(x) + f∗(v) = ⟪v,x⟫` iff `f∗(v) = ⟪v,x⟫ - f(x)`
 lemma fenchelConjugate_sub_iff_add_eq (v : E) (x : dom f) : f x + f∗ v = ⟪v,x⟫ ↔ f∗ v = ⟪v,x⟫ - f x := by
@@ -140,8 +135,7 @@ lemma fenchelConjugate_sub_iff_add_eq (v : E) (x : dom f) : f x + f∗ v = ⟪v,
     -- Cancel f(x) to get ⟪v,x⟫ = ⟪v,x⟫
     rw [EReal.add_sub_cancel_left]
 
-
--- If `v` is a subgradient of `f` at `x`, then `f(x) + f∗(v) = ⟪v,x⟫`
+/-- If `v` is a subgradient of `f` at `x`, then `f(x) + f∗(v) = ⟪v,x⟫`. -/
 theorem fenchel_young_eq.mp (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x → f x + f∗ v = ⟪v,x⟫ := by
   -- Assume `v ∈ ∂f x`
   intro hv
@@ -170,8 +164,7 @@ theorem fenchel_young_eq.mp (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x 
     -- Apply the Fenchel-Young inequality
     exact fenchel_young f v x x.2.2 h
 
-
--- If `f(x) + f∗(v) = ⟪v,x⟫`, then `v` is a subgradient of `f` at `x`
+/-- If `f(x) + f∗(v) = ⟪v,x⟫`, then `v` is a subgradient of `f` at `x`. -/
 theorem fenchel_young_eq.mpr (v : E) (x : dom f) (h : IsProper f) : f x + f∗ v = ⟪v,x⟫ → v ∈ ∂f x := by
   -- Assume f(x) + f∗(v) = ⟪v,x⟫ and y ∈ E in the subgradient inequality
   intro h_eq y
@@ -200,7 +193,7 @@ theorem fenchel_young_eq.mpr (v : E) (x : dom f) (h : IsProper f) : f x + f∗ v
   -- Our goal is exactly h_le
   exact h_le
 
--- The Fenchel-Young equality: `v` is a subgradient of `f` at `x` iff `f(x) + f∗(v) = ⟪v,x⟫`
+/-- The Fenchel-Young equality states that `v` is a subgradient of a proper function `f` at a point `x` if and only if `f(x) + f∗(v) = ⟪v,x⟫`. -/
 theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x ↔ f x + f∗ v = ⟪v,x⟫ := by
   apply Iff.intro
   · exact fenchel_young_eq.mp f v x h
@@ -208,7 +201,9 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x ↔
 
 
 
-
+-- unused for now
+-- `v` is a subgradient of `f` at `x` iff `v` is in the subdifferential of `f` at `x`
+-- theorem mem_subdifferential : IsSubgradient f v x ↔ v ∈ ∂f x := ⟨id, id⟩
 
 -- The epigraph of `f`
 def epi : Set (E × ℝ) := {(x,c) | f x ≤ c}
