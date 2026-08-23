@@ -9,7 +9,6 @@ set_option linter.style.longLine false
 
 ## TODO
 - Replace the definition of `fenchelConjugate` to apply on the dual space of `E`
-- Organise things better e.g. structure for EReal function, sections
 - Figure out naming conventions
 - Write proper header for file - overview, key declarations, references
 - Discuss whether to redefine the domain as the set of x where f(x) is real
@@ -18,72 +17,79 @@ set_option linter.style.longLine false
 local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-variable (f : E → EReal)
+variable (f : E → EReal) (s : Set E)
 
-/-- The effective domain of a function `f : E → EReal` is the set of points `x ∈ E` where `f(x)` is finite (i.e., not equal to `+∞` or `-∞`). -/
+/-- The effective domain of `f` is the set of `x` for which `f x` is finite. -/
 def dom : Set E := {x : E | f x ≠ ⊤ ∧ f x ≠ ⊥}
 
 /-- A function `f` is proper if its domain is nonempty. -/
 def IsProper : Prop := dom f ≠ ∅
 
-/-- The Fenchel conjugate of a function `f : E → EReal` is defined as the supremum over all `x ∈ E` of `⟪v,x⟫ - f(x)`. -/
+/-- The Fenchel conjugate of `f` at `v` is the supremum of `⟪v, x⟫ - f x` over `x`. -/
 noncomputable def fenchelConjugate (v : E) : EReal := ⨆ x : E, ⟪v, x⟫ - f x
 
 -- Notation for the Fenchel conjugate of f: `f∗`
 local postfix:max "∗" => fenchelConjugate
 
--- If a function `f` is proper, then its Fenchel conjugate is not `-∞`
+/-- If `f` is proper, then its Fenchel conjugate `f∗(v)` is not `-∞` for any `v ∈ E`. -/
 lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
   -- Assume that the function `f` is proper
   intro h
-  -- The Fenchel conjugate, defined as sup_{x∈E} ⟨v,x⟩-f(x)
   unfold fenchelConjugate
-  -- Apply the fact that if `x<y` then `x≠y`
+  -- Apply the fact that if `x ≠ y` then `y < x`
   apply ne_of_gt
-  -- -∞ < sup_{i} s_i iff ∃ i: -∞ < s_i.
+  -- -∞ < sup_{i} s(i) iff ∃ i : -∞ < s(i)
   rw [bot_lt_iSup]
-  -- Indeed, since the domain is nonempty there exists x such that f(x)<∞ and f(x)>-∞.
-  obtain ⟨x, ht, hb⟩ := Set.nonempty_iff_ne_empty.mpr h
+  -- Since the domain is nonempty there exists x such that f(x) ≠ ∞ and f(x) ≠ -∞
+  obtain ⟨x, h_ne_top, h_ne_bot⟩ := Set.nonempty_iff_ne_empty.mpr h
   use x
-  -- Since `f(x)≠-∞` and `f(x)≠+∞`, then `f(x)` is a real number.
-  rw[← EReal.coe_toReal ht hb]
-  -- From Init.Data.Ord.Basic: uses decidable less-than and equality relations to find an `Ordering`
-  -- Gives a 'less than' ordering iff `x < y`. Clearly `⊥ < ⟪v,x⟫ - f x`, since `⊥ < ⟪v,x⟫` and `f x < ⊥`
+  -- Rewrite the finite `EReal` value `f x` as its real coercion
+  rw[← EReal.coe_toReal h_ne_top h_ne_bot]
+  -- The comparison reduces to `Ordering.lt`, giving the required `⊥ < ⟪v, x⟫ - f x`
   exact compareOfLessAndEq_eq_lt.mp rfl
 
-/-- For a proper function `f : E → EReal`, the Fenchel-Young inequality states that for any `v ∈ E` and `x ∈ dom f`, we have `⟪v,x⟫ ≤ f(x) + f∗(v)`. -/
+/-- For a proper function `f` and `x` such that `f x ≠ ⊥`, the Fenchel-Young inequality gives `⟪v, x⟫ ≤ f x + f∗ v`. -/
 theorem fenchel_young (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : ⟪v,x⟫ ≤ f x + f∗ v := by
-  -- f∗(v) = sup_{x ∈ E} ⟨v,x⟩ - f(x) ≥ ⟨v,x⟫ - f(x)
+  -- From the definition of `f∗`, we have `f∗ v ≥ ⟪v,x⟫ - f x`
   have h3 : f∗ v ≥ ⟪v,x⟫ - f x := by exact le_iSup_iff.mpr fun b a ↦ a x
-  -- Write h3 as ⟪v,x⟫ - f(x) ≤ f∗ v
+  -- Rewrite the inequality with `≤`
   rw[ge_iff_le] at h3
-  -- Since f(x) ≠ -∞ and f∗(v) ≠ -∞, we can add f(x) to both sides of the inequality
+  -- Since `f x ≠ ⊥` and `f∗ v ≠ ⊥`, add `f x` to both sides
   rw [EReal.sub_le_iff_le_add (Or.inl h1) (Or.inr (fenchelConjugate_ne_bot f v h2))] at h3
-  -- Commute the addition to get ⟪v,x⟫ ≤ f(x) + f∗ v
+  -- Match the order of the terms using commutativity
   rw[add_comm]
-  -- Conclude the proof with the final inequality
   exact h3
 
-/-- The Fenchel biconjugate of a function `f : E → EReal` is the Fenchel conjugate of the Fenchel conjugate of `f`. -/
+/-- The Fenchel biconjugate of `f` is the Fenchel conjugate of `f∗`. -/
 noncomputable def fenchelBiconjugate (x : E) : EReal := f∗∗ x
 
--- The Fenchel biconjugate of `f` is expressed as a supremum over `v ∈ E`
-lemma fenchelBiconjugate_eq_sup (x : E) : f∗∗ x = ⨆ v, ⟪v, x⟫ - f∗ v := by
+/-
+Note: doing this below also works
+
+unfold fenchelConjugate
+simp only [real_inner_comm]
+
+Regular `rw` without `conv` or `simp only` does not work because `rw` cannot rewrite subterms containing bound variables. The inner product is in a "binder".
+`conv in` works because we can get inside the binder and rewrite. The simp only works for the same reason
+-/
+/-- The Fenchel biconjugate of `f` is the supremum of `⟪v, x⟫ - f∗ v` over `v`. -/
+lemma fenchelBiconjugate_eq_sup (x : E) : f∗∗ x = ⨆ v : E, ⟪v, x⟫ - f∗ v := by
+  unfold fenchelConjugate
+  -- Apply symmetry to match the inner-product ordering
   conv in ⟪_,_⟫ =>
    rw [real_inner_comm]
-  rfl
 
-/-- The Fenchel biconjugate of a proper function `f : E → EReal` is less than or equal to `f`. -/
+/-- For a proper function `f`, the Fenchel biconjugate satisfies `f∗∗ x ≤ f x`. -/
 theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f∗∗ x ≤ f x := by
   -- Write `f∗∗ x` as a supremum over `v ∈ E`
   rw[fenchelBiconjugate_eq_sup]
   -- Since the supremum of `⟪v,x⟫ - f∗ v` over all `v ∈ E` is `≤ f(x)` then `∀ i, ⟪i,x⟫ - f∗ i ≤ f(x)`
   apply iSup_le
-  -- Say `v` is an arbitrary element of `E`
+  -- Suppose `v` is an arbitrary element of `E`
   intro v
   -- Move `f∗ v` to the other side of the inequality to get `⟪v,x⟫ ≤ f(x) + f∗ v`
   apply EReal.sub_le_of_le_add
-  -- This is exactly the Fenchel-Young inequality
+  -- `⟪v,x⟫ ≤ f(x) + f∗ v` is exactly the Fenchel-Young inequality
   exact fenchel_young f v x h1 h2
 
 /-
@@ -91,10 +97,10 @@ theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f�
 https://github.com/optsuite/optlib/blob/main/Optlib/Convex/Subgradient.lean
 -/
 
-/-- A vector `v` is a subgradient of a function `f` at a point `x` if for all `y`, `⟪v, y⟫ - ⟪v,x⟫ ≤ f(y) - f(x)`. -/
+/-- `v` is a subgradient of `f` at `x` if `⟪v, y⟫ - ⟪v, x⟫ ≤ f y - f x` for all `y`. -/
 def IsSubgradient (v x : E) : Prop := ∀ y, ⟪v, y⟫ - ⟪v,x⟫ ≤ f y - f x
 
-/-- The subdifferential of a function `f` at a point `x` is the set of all subgradients of `f` at `x`. -/
+/-- The subdifferential of `f` at `x` is the set of all subgradients of `f` at `x`. -/
 def subdifferential (x : E) : Set E := {v : E | IsSubgradient f v x}
 
 -- Notation for the subdifferential: `∂f`
@@ -113,7 +119,7 @@ lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ 
   -- Since `⊥ < ⟪v,y⟫ - ⟪v,x⟫`, we have a contradiction
   contradiction
 
--- The Fenchel-Young equality: `f(x) + f∗(v) = ⟪v,x⟫` iff `f∗(v) = ⟪v,x⟫ - f(x)`
+/-- For `x ∈ dom f`, `f x + f∗ v = ⟪v, x⟫` iff `f∗ v = ⟪v, x⟫ - f x`. -/
 lemma fenchelConjugate_sub_iff_add_eq (v : E) (x : dom f) : f x + f∗ v = ⟪v,x⟫ ↔ f∗ v = ⟪v,x⟫ - f x := by
   -- Split the equivalence into two implications
   apply Iff.intro
@@ -149,19 +155,18 @@ theorem fenchel_young_eq.mp (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x 
     intro y
     -- Rewrite the subgradient inequality using y
     specialize hv y
+    -- Add ⟪v,x⟫ to both sides of the subgradient inequality
+    rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))] at hv
     -- Move f(y) to the other side of the inequality
     apply EReal.sub_le_of_le_add
-    -- Use `⟪v,x⟫ ≠ ⊥` and `⟪v,x⟫ ≠ ⊤` to move `⟪v,x⟫` to the other side of the inequality
-    rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))] at hv
-    -- Simplify all subtractions to additions of negatives
+    -- Rewrite all subtractions to additions of negatives
     simp only [sub_eq_add_neg] at *
-    -- Apply associativity and commutativity of addition
+    -- Invoke grind with the solver for associative and commutative operators
     grind => ac
   · -- Case 2: `⟪v,x⟫ - f(x) ≤ f∗(v)`
-    -- Use f(x) ≠ ⊥ and f(x) ≠ ⊤ to move f(x) to the other side of the inequality
-    rw [(EReal.sub_le_iff_le_add (Or.inl x.2.2) (Or.inl x.2.1))]
-    rw[add_comm]
-    -- Apply the Fenchel-Young inequality
+    -- Rearrange the inequality using the fact that `f x` is finite
+    rw [(EReal.sub_le_iff_le_add (Or.inl x.2.2) (Or.inl x.2.1)), add_comm]
+    -- Close the goal using the Fenchel-Young inequality
     exact fenchel_young f v x x.2.2 h
 
 /-- If `f(x) + f∗(v) = ⟪v,x⟫`, then `v` is a subgradient of `f` at `x`. -/
@@ -193,13 +198,11 @@ theorem fenchel_young_eq.mpr (v : E) (x : dom f) (h : IsProper f) : f x + f∗ v
   -- Our goal is exactly h_le
   exact h_le
 
-/-- The Fenchel-Young equality states that `v` is a subgradient of a proper function `f` at a point `x` if and only if `f(x) + f∗(v) = ⟪v,x⟫`. -/
+/-- For proper `f`, `v` is a subgradient of `f` at `x` if and only if the Fenchel-Young equality holds. -/
 theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x ↔ f x + f∗ v = ⟪v,x⟫ := by
   apply Iff.intro
   · exact fenchel_young_eq.mp f v x h
   · exact fenchel_young_eq.mpr f v x h
-
-
 
 -- unused for now
 -- `v` is a subgradient of `f` at `x` iff `v` is in the subdifferential of `f` at `x`
