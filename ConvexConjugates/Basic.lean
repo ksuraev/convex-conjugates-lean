@@ -31,16 +31,16 @@ noncomputable def fenchelConjugate (v : E) : EReal := ⨆ x : E, ⟪v, x⟫ - f 
 -- Notation for the Fenchel conjugate of f: `f∗`
 local postfix:max "∗" => fenchelConjugate
 
-/-- If `f` is proper, then its Fenchel conjugate `f∗(v)` is not `-∞` for any `v ∈ E`. -/
+/-- If `f` is proper, then its Fenchel conjugate `f∗ v` is not `⊥` for any `v ∈ E`. -/
 lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
-  -- Assume that the function `f` is proper
+  -- Assume that `f` is proper
   intro h
   unfold fenchelConjugate
-  -- Apply the fact that if `x ≠ y` then `y < x`
+  -- It suffices to show the supremum is strictly greater than `⊥`
   apply ne_of_gt
-  -- -∞ < sup_{i} s(i) iff ∃ i : -∞ < s(i)
+  -- `⊥ < ⨆ i, s i` iff `⊥ < s i` for some `i`
   rw [bot_lt_iSup]
-  -- Since the domain is nonempty there exists x such that f(x) ≠ ∞ and f(x) ≠ -∞
+  -- Since the domain is nonempty there exists `x` such that `f x ≠ ⊤` and `f x ≠ ⊥`
   obtain ⟨x, h_ne_top, h_ne_bot⟩ := Set.nonempty_iff_ne_empty.mpr h
   use x
   -- Rewrite the finite `EReal` value `f x` as its real coercion
@@ -79,17 +79,17 @@ lemma fenchelBiconjugate_eq_sup (x : E) : f∗∗ x = ⨆ v : E, ⟪v, x⟫ - f�
   conv in ⟪_,_⟫ =>
    rw [real_inner_comm]
 
-/-- For a proper function `f`, the Fenchel biconjugate satisfies `f∗∗ x ≤ f x`. -/
+/-- For proper `f` with `f x ≠ ⊥`, the Fenchel biconjugate satisfies `f∗∗ x ≤ f x`. -/
 theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f∗∗ x ≤ f x := by
   -- Write `f∗∗ x` as a supremum over `v ∈ E`
   rw[fenchelBiconjugate_eq_sup]
-  -- Since the supremum of `⟪v,x⟫ - f∗ v` over all `v ∈ E` is `≤ f(x)` then `∀ i, ⟪i,x⟫ - f∗ i ≤ f(x)`
+  -- Since the supremum of `⟪v,x⟫ - f∗ v` over all `v ∈ E` is `≤ f x` then `∀ i, ⟪i,x⟫ - f∗ i ≤ f x`
   apply iSup_le
   -- Suppose `v` is an arbitrary element of `E`
   intro v
-  -- Move `f∗ v` to the other side of the inequality to get `⟪v,x⟫ ≤ f(x) + f∗ v`
+  -- Move `f∗ v` to the other side of the inequality to get `⟪v,x⟫ ≤ f x + f∗ v`
   apply EReal.sub_le_of_le_add
-  -- `⟪v,x⟫ ≤ f(x) + f∗ v` is exactly the Fenchel-Young inequality
+  -- `⟪v,x⟫ ≤ f x + f∗ v` is exactly the Fenchel-Young inequality
   exact fenchel_young f v x h1 h2
 
 /-
@@ -106,7 +106,7 @@ def subdifferential (x : E) : Set E := {v : E | IsSubgradient f v x}
 -- Notation for the subdifferential: `∂f`
 local prefix:max "∂" => subdifferential
 
--- The subdifferential of a proper function `f` at `x` is nonempty if `f(y) ≠ ⊥` for all `y ∈ E`
+/-- The subdifferential of a proper function `f` at `x` is nonempty if `f y ≠ ⊥` for all `y ∈ E`. -/
 lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ ⊥ := by
   -- Assume that `∂f x ≠ ∅`, `y ∈ E`, and `f y = ⊥`
   intro h_ne y h_fy
@@ -123,77 +123,77 @@ lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ 
 lemma fenchelConjugate_sub_iff_add_eq (v : E) (x : dom f) : f x + f∗ v = ⟪v,x⟫ ↔ f∗ v = ⟪v,x⟫ - f x := by
   -- Split the equivalence into two implications
   apply Iff.intro
-  · -- (→) Assume f(x) + f∗(v) = ⟪v,x⟫
+  · -- (→) Assume `f x + f∗ v = ⟪v,x⟫`
     intro h
-    -- Rewrite ⟪v,x⟫ as f x + f∗ v to get f∗(v) = f(x) + f∗(v) - f(x)
+    -- Rewrite `⟪v,x⟫` as `f x + f∗ v `to get `f∗ v = f x + f∗ v - f x`
     rw[← h]
-    -- Since f(x) ≠ ⊥ and f(x) ≠ ⊤, f(x) is a real number
+    -- Since `f x ≠ ⊥` and `f x ≠ ⊤`, `f x` is a real number
     rw[← EReal.coe_toReal x.2.1 x.2.2]
-    -- Cancel f(x) to get f∗(v) = f∗(v)
+    -- Cancel `f x` to get `f∗ v = f∗ v`
     rw [EReal.add_sub_cancel_left]
-  · -- (←) Assume f∗(v) = ⟪v,x⟫ - f(x)
+  · -- (←) Assume `f∗ v = ⟪v,x⟫ - f x`
     intro h
-    -- Rewrite f∗ v as ⟪v,x⟫ - f x
+    -- Rewrite `f∗ v` as `⟪v,x⟫ - f x`
     rw[h]
     rw[← EReal.coe_toReal x.2.1 x.2.2]
-    -- Rewrite the left-hand side using the fact that a + (b - c) = a + b - c
+    -- Rewrite the left-hand side using the fact that `a + (b - c) = a + b - c`
     rw [add_sub]
-    -- Cancel f(x) to get ⟪v,x⟫ = ⟪v,x⟫
+    -- Cancel `f x` to get `⟪v,x⟫ = ⟪v,x⟫`
     rw [EReal.add_sub_cancel_left]
 
-/-- If `v` is a subgradient of `f` at `x`, then `f(x) + f∗(v) = ⟪v,x⟫`. -/
+/-- If `v` is a subgradient of `f` at `x`, then `f x + f∗ v = ⟪v,x⟫`. -/
 theorem fenchel_young_eq.mp (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x → f x + f∗ v = ⟪v,x⟫ := by
   -- Assume `v ∈ ∂f x`
   intro hv
-  -- Apply the equivalence between `f(x) + f∗(v) = ⟪v,x⟫` and `f∗(v) = ⟪v,x⟫ - f(x)`
+  -- Apply the equivalence between `f x + f∗ v = ⟪v,x⟫` and `f∗ v = ⟪v,x⟫ - f x`
   rw[fenchelConjugate_sub_iff_add_eq f v x]
-  -- Split into two inequalities: `f∗(v) ≤ ⟪v,x⟫ - f(x)` and `⟪v,x⟫ - f(x) ≤ f∗(v)`
+  -- Split into two inequalities: `f∗ v ≤ ⟪v,x⟫ - f x` and `⟪v,x⟫ - f x ≤ f∗ v`
   apply le_antisymm
-  · -- Case 1: `f∗(v) ≤ ⟪v,x⟫ - f(x)`
-    -- Since the supremum of ⟪v,y⟫ - f(y) over all y ∈ E is ≤ ⟪v,x⟫ - f(x) then ∀ y, ⟪v,y⟫ - f(y) ≤ ⟪v,x⟫ - f(x)
+  · -- Case 1: `f∗ v ≤ ⟪v,x⟫ - f x`
+    -- Since the supremum of `⟪v,y⟫ - f y` over all `y ∈ E` is `≤ ⟪v,x⟫ - f x` then `∀ i, ⟪v,i⟫ - f i ≤ ⟪v,x⟫ - f x`
     apply iSup_le
     intro y
-    -- Rewrite the subgradient inequality using y
+    -- Rewrite the subgradient inequality using `y`
     specialize hv y
-    -- Add ⟪v,x⟫ to both sides of the subgradient inequality
+    -- Add `⟪v,x⟫` to both sides of the subgradient inequality
     rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))] at hv
-    -- Move f(y) to the other side of the inequality
+    -- Move `f y` to the other side of the inequality
     apply EReal.sub_le_of_le_add
     -- Rewrite all subtractions to additions of negatives
     simp only [sub_eq_add_neg] at *
     -- Invoke grind with the solver for associative and commutative operators
     grind => ac
-  · -- Case 2: `⟪v,x⟫ - f(x) ≤ f∗(v)`
+  · -- Case 2: `⟪v,x⟫ - f x ≤ f∗ v`
     -- Rearrange the inequality using the fact that `f x` is finite
     rw [(EReal.sub_le_iff_le_add (Or.inl x.2.2) (Or.inl x.2.1)), add_comm]
     -- Close the goal using the Fenchel-Young inequality
     exact fenchel_young f v x x.2.2 h
 
-/-- If `f(x) + f∗(v) = ⟪v,x⟫`, then `v` is a subgradient of `f` at `x`. -/
+/-- If `f x + f∗ v = ⟪v,x⟫`, then `v` is a subgradient of `f` at `x`. -/
 theorem fenchel_young_eq.mpr (v : E) (x : dom f) (h : IsProper f) : f x + f∗ v = ⟪v,x⟫ → v ∈ ∂f x := by
-  -- Assume f(x) + f∗(v) = ⟪v,x⟫ and y ∈ E in the subgradient inequality
+  -- Assume `f x + f∗ v = ⟪v,x⟫` and `y ∈ E` in the subgradient inequality
   intro h_eq y
   -- Rewrite the equality `f x + f∗ v = ⟪v,x⟫` as `f∗ v = ⟪v,x⟫ - f x` at h_eq
   rw [fenchelConjugate_sub_iff_add_eq f v x] at h_eq
-  -- Add ⟪v,x⟫ to both sides of the subgradient inequality
+  -- Add `⟪v,x⟫` to both sides of the subgradient inequality
   rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))]
-  -- Rewrite to group ⟪v,x⟫ - f(x) together
+  -- Rewrite to group `⟪v,x⟫ - f x` together
   rw[sub_eq_add_neg, add_assoc, add_comm (-f x), ← sub_eq_add_neg]
-  -- Substitute ⟪v,x⟫ - f(x) = f∗(v)
+  -- Substitute `⟪v,x⟫ - f x = f∗ v`
   rw[← h_eq, add_comm]
-  -- Show that f∗(v) ≠ ⊤
+  -- Show that `f∗ v ≠ ⊤`
   have h_ne_top : f∗ v ≠ ⊤ := by
-    -- ⟪v,x⟫ - f(x) ≠ ⊤
+    -- `⟪v,x⟫ - f x ≠ ⊤`
     rw [h_eq]
-    -- Coerce f(x) to a real number since f(x) ≠ ⊤ and f(x) ≠ ⊥
+    -- Coerce `f x` to a real number since `f x ≠ ⊤` and `f x ≠ ⊥`
     rw[← EReal.coe_toReal x.2.1 x.2.2]
-    -- A real number is not equal to ⊤
+    -- A real number is not equal to `⊤`
     exact EReal.coe_ne_top (⟪v,x⟫ - (f x).toReal)
-  -- Show that f∗(v) ≠ ⊥
+  -- Show that `f∗ v ≠ ⊥`
   have h_ne_bot : f∗ v ≠ ⊥ := by exact fenchelConjugate_ne_bot f v h
-  -- ⟪v,y⟫ - f(y) ≤ sup_{y ∈ E} ⟨v,y⟩ - f(y) = f∗(v)
+  -- `⟪v,y⟫ - f y ≤ sup_{y ∈ E} ⟨v,y⟩ - f y = f∗ v`
   have h_le : ⟪v,y⟫ - f y ≤ f∗ v:= by exact le_iSup_iff.mpr fun b a ↦ a y
-  -- Add f(y) to both sides of the inequality in h_le to get ⟪v,y⟫ ≤ f∗(v) + f(y)
+  -- Add `f y` to both sides of the inequality in h_le to get `⟪v,y⟫ ≤ f∗ v + f y`
   rw [EReal.sub_le_iff_le_add (Or.inr h_ne_top) (Or.inr h_ne_bot)] at h_le
   -- Our goal is exactly h_le
   exact h_le
