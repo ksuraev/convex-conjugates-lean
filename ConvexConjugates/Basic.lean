@@ -1,4 +1,3 @@
-import Mathlib.Analysis.InnerProductSpace.Defs
 import Mathlib.Analysis.InnerProductSpace.Basic
 
 set_option linter.style.header false
@@ -17,7 +16,7 @@ set_option linter.style.longLine false
 local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-variable (f : E → EReal) (s : Set E)
+variable (f : E → EReal)
 
 /-- The effective domain of `f` is the set of `x` for which `f x` is finite. -/
 def dom : Set E := {x : E | f x ≠ ⊤ ∧ f x ≠ ⊥}
@@ -204,10 +203,43 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x ↔
   · exact fenchel_young_eq.mp f v x h
   · exact fenchel_young_eq.mpr f v x h
 
+
+
+
+
+-- CONVEXITY
+-- innerₗ (mathlib) is the inner product as bilinear map
+#check (innerₗ E) -- innerₗ E : E →ₗ[ℝ] E →ₗ[ℝ] ℝ
+
+lemma innerₗ.convex (x : E) : ConvexOn ℝ Set.univ ((innerₗ E) x) := by
+  -- convex_univ is the proof that the universal set is convex
+  exact LinearMap.convexOn ((innerₗ E) x) convex_univ
+
+-- Using our defs
+def inner' (x : dom f) : E → ℝ := fun v => ⟪v, x⟫
+
+lemma inner'.convex (x : dom f) : ConvexOn ℝ Set.univ (inner' f x) := by
+  -- .flip flips the arguments of the inner product
+  exact LinearMap.convexOn ((innerₗ E).flip x) convex_univ
+
+-- In Easy Path book, they define φₓ: ℝⁿ → ℝ, φₓ(v) = ⟨v, x⟩ - f(x) for x ∈ dom f and v ∈ ℝⁿ
+def phi (x : dom f) : E → ℝ := fun v => inner' f x v - (f x).toReal
+-- this is convex because it is the sum of a linear function and a constant
+
+lemma phi.convex (x : dom f) : ConvexOn ℝ Set.univ (phi f x) := by
+  have hinner : ConvexOn ℝ Set.univ (inner' f x) := by
+    exact inner'.convex f x
+  have h := hinner.add_const (-(f x).toReal)
+  exact ConvexOn.congr h fun ⦃x_1⦄ ↦ congrFun rfl
+
+
 -- unused for now
 -- `v` is a subgradient of `f` at `x` iff `v` is in the subdifferential of `f` at `x`
 -- theorem mem_subdifferential : IsSubgradient f v x ↔ v ∈ ∂f x := ⟨id, id⟩
 
--- The epigraph of `f`
-def epi : Set (E × ℝ) := {(x,c) | f x ≤ c}
+-- -- The epigraph of `f`
+-- def epi : Set (E × ℝ) := {(x,c) | f x ≤ c}
+
+-- def IsConvex' : Prop := Convex ℝ (epi f)
+
 #min_imports
