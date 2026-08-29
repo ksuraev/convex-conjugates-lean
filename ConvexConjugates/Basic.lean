@@ -232,6 +232,9 @@ lemma phi.convex (x : dom f) : ConvexOn ℝ Set.univ (phi f x) := by
   have h := hinner.add_const (-(f x).toReal)
   exact ConvexOn.congr h fun ⦃x_1⦄ ↦ congrFun rfl
 
+-- Leaving for now because I needed to understand the linear mapping stuff
+-- variable (β : Type*) [Semiring β] [PartialOrder β] [SMul β E] [SMul β EReal]
+-- def IsConvex : Prop := ConvexOn β Set.univ f
 
 -- unused for now
 -- `v` is a subgradient of `f` at `x` iff `v` is in the subdifferential of `f` at `x`
