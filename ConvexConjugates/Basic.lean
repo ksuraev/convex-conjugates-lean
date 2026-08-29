@@ -223,8 +223,8 @@ lemma inner'.convex (x : dom f) : ConvexOn ℝ Set.univ (inner' f x) := by
   exact LinearMap.convexOn ((innerₗ E).flip x) convex_univ
 
 -- In Easy Path book, they define φₓ: ℝⁿ → ℝ, φₓ(v) = ⟨v, x⟩ - f(x) for x ∈ dom f and v ∈ ℝⁿ
-def phi (x : dom f) : E → ℝ := fun v => inner' f x v - (f x).toReal
 -- this is convex because it is the sum of a linear function and a constant
+def phi (x : dom f) : E → ℝ := fun v => inner' f x v - (f x).toReal
 
 lemma phi.convex (x : dom f) : ConvexOn ℝ Set.univ (phi f x) := by
   have hinner : ConvexOn ℝ Set.univ (inner' f x) := by
