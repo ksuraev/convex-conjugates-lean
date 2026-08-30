@@ -283,7 +283,6 @@ lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = �
 
 -- No clue how to handle this yet
 lemma phi_iSup.convex : ConvexOn ℝ Set.univ (fun v => ⨆ x : dom f, φ f x v) := by
-
   sorry
 
 
@@ -300,7 +299,7 @@ lemma φ.toEReal.epi_convex (x : dom f) : Convex ℝ (epi (φ.toEReal f x)) := b
   norm_cast
   exact (φ.convex f x).convex_epigraph
 
-lemma phi.iSup_epi_convex : Convex ℝ (epi (fun v : E => ⨆ x : dom f, φ.toEReal f x v)) := by
+lemma φ.iSup_epi_convex : Convex ℝ (epi (fun v : E => ⨆ x : dom f, φ.toEReal f x v)) := by
   -- The epigraph of the supremum is the intersection of the epigraphs
   have h_inter : epi (fun v : E => ⨆ x : dom f, φ.toEReal f x v) = ⋂ x : dom f, epi (φ.toEReal f x) := by
     -- `p` is in the epigraph of the supremum iff `p` is in the intersection of the epigraphs
@@ -326,7 +325,7 @@ theorem fenchelConjugate.convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f∗)
   -- Rewrite the epigraph of `f∗` as the epigraph of the supremum
   rw[hf]
   -- The epigraph of the supremum is convex
-  exact phi.iSup_epi_convex f
+  exact φ.iSup_epi_convex f
 
 -- Leaving for now because I needed to understand the linear mapping stuff
 -- variable (β : Type*) [Semiring β] [PartialOrder β] [SMul β E] [SMul β EReal]
