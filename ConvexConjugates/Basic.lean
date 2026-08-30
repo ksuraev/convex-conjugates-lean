@@ -272,7 +272,7 @@ lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = �
       -- Since `f x = ⊤`, then `⟪v, x⟫ - f x = ⊥` and the inequality holds trivially
       simp [htop]
   · -- (≥) Show that `f∗ v ≥ ⨆ x ∈ dom f, phi_Ereal f x v`
-    -- For all `i ∈ dom f, phi_Ereal f i v ≤ f∗ v`
+    -- For all `x ∈ dom f, phi_Ereal f x v ≤ f∗ v`
     apply iSup_le
     intro x
     -- The supremum over `dom f` is bounded by `f∗ v`
@@ -316,10 +316,15 @@ lemma phi.iSup_epi_convex : Convex ℝ (epi (fun v : E => ⨆ x : dom f, phi_ERe
 
 
 theorem fenchelConjugate.convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f∗) := by
+  -- `f∗` is the supremum of `phi_EReal f x` over `x ∈ dom f`
   have hf : f∗ = fun v : E => ⨆ x : dom f, phi_EReal f x v := by
-    ext p
-    simp [fenchelConjugate.eq_iSup_dom f h]
+    -- `f∗ v` is the supremum of `phi_EReal f x v` over `x ∈ dom f`
+    ext v
+    -- These two expressions are equal by `fenchelConjugate.eq_iSup_dom`
+    rw[fenchelConjugate.eq_iSup_dom f h]
+  -- Rewrite the epigraph of `f∗` as the epigraph of the supremum
   rw[hf]
+  -- The epigraph of the supremum is convex
   exact phi.iSup_epi_convex f
 
 -- Leaving for now because I needed to understand the linear mapping stuff
