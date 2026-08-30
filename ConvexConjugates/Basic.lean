@@ -247,8 +247,8 @@ lemma phi_Ereal.eq (x : dom f) : phi_EReal f x v = ⟪v,x⟫ - f x := by
 -- Then show that this is convex (the hard part)
 lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = ⨆ x : dom f, phi_EReal f x v := by
   apply le_antisymm
-  · -- (≤) Show that `f∗ v ≤ ⨆ x ∈ dom f, phi f x v`
-    -- For all `i ∈ E`, `⟪v,i⟫ - f i ≤ ⨆ x, phi f x v`
+  · -- (≤) Show that `f∗ v ≤ ⨆ x ∈ dom f, phi_Ereal f x v`
+    -- For all `i ∈ E`, `⟪v,i⟫ - f i ≤ ⨆ x, phi_Ereal f x v`
     apply iSup_le
     -- `x` is an arbitrary element of `E`
     intro x
@@ -271,13 +271,13 @@ lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = �
         exact hx ⟨hne, h x⟩
       -- Since `f x = ⊤`, then `⟪v, x⟫ - f x = ⊥` and the inequality holds trivially
       simp [htop]
-  · -- (≥) Show that `f∗ v ≥ ⨆ x ∈ dom f, phi f x v`
-    -- For all `i ∈ dom f, phi f i v ≤ f∗ v`
+  · -- (≥) Show that `f∗ v ≥ ⨆ x ∈ dom f, phi_Ereal f x v`
+    -- For all `i ∈ dom f, phi_Ereal f i v ≤ f∗ v`
     apply iSup_le
     intro x
     -- The supremum over `dom f` is bounded by `f∗ v`
     have h2 : ⟪v, x⟫ - f x ≤ f∗ v := by exact le_iSup_iff.mpr fun b a ↦ a x
-    -- Rewrite `phi f x v` as `⟪v, x⟫ - f x` and apply the inequality
+    -- Rewrite `phi_Ereal f x v` as `⟪v, x⟫ - f x` and apply the inequality
     rw[phi_Ereal.eq]
     exact le_of_eq_of_le rfl h2
 
@@ -313,6 +313,14 @@ lemma phi.iSup_epi_convex : Convex ℝ (epi (fun v : E => ⨆ x : dom f, phi_ERe
   -- Each individual epigraph is convex by `phi_EReal.epi_convex`
   intro x
   exact phi_EReal.epi_convex f x
+
+
+theorem fenchelConjugate.convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f∗) := by
+  have hf : f∗ = fun v : E => ⨆ x : dom f, phi_EReal f x v := by
+    ext p
+    simp [fenchelConjugate.eq_iSup_dom f h]
+  rw[hf]
+  exact phi.iSup_epi_convex f
 
 -- Leaving for now because I needed to understand the linear mapping stuff
 -- variable (β : Type*) [Semiring β] [PartialOrder β] [SMul β E] [SMul β EReal]
