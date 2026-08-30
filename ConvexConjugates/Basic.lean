@@ -224,20 +224,20 @@ lemma inner'.convex (x : dom f) : ConvexOn ℝ Set.univ (inner' f x) := by
   exact LinearMap.convexOn ((innerₗ E).flip x) convex_univ
 
 -- In Easy Path book, they define φₓ: ℝⁿ → ℝ, φₓ(v) = ⟨v, x⟩ - f(x) for x ∈ dom f and v ∈ ℝⁿ
-def phi (x : dom f) : E → ℝ := fun v => inner' f x v - (f x).toReal
+def φ (x : dom f) : E → ℝ := fun v => inner' f x v - (f x).toReal
 
 -- this is convex because it is the sum of a linear function and a constant
-lemma phi.convex (x : dom f) : ConvexOn ℝ Set.univ (phi f x) := by
+lemma φ.convex (x : dom f) : ConvexOn ℝ Set.univ (φ f x) := by
   have hinner : ConvexOn ℝ Set.univ (inner' f x) := by
     exact inner'.convex f x
   have h := hinner.add_const (-(f x).toReal)
   exact ConvexOn.congr h fun ⦃x_1⦄ ↦ congrFun rfl
 
--- Coercion of phi to EReal
-def phi_EReal (x : dom f) : E → EReal := fun v => (phi f x v : EReal)
+-- Coercion of φ to an EReal function
+def φ.toEReal (x : dom f) : E → EReal := fun v => (φ f x v : EReal)
 
 -- helper
-lemma phi_Ereal.eq (x : dom f) : phi_EReal f x v = ⟪v,x⟫ - f x := by
+lemma φ.toEReal.eq (x : dom f) : φ.toEReal f x v = ⟪v,x⟫ - f x := by
   -- Since `x ∈ dom f`, `f x` is finite
   rw [← EReal.coe_toReal x.2.1 x.2.2]
   -- Prove the equality using `ac_rfl` for associative and commutative operators
@@ -245,10 +245,10 @@ lemma phi_Ereal.eq (x : dom f) : phi_EReal f x v = ⟪v,x⟫ - f x := by
 
 -- In line with the book, we need to show f∗ v = ⨆ x ∈ dom f,  φₓ(v) for v ∈ E?
 -- Then show that this is convex (the hard part)
-lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = ⨆ x : dom f, phi_EReal f x v := by
+lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = ⨆ x : dom f, φ.toEReal f x v := by
   apply le_antisymm
-  · -- (≤) Show that `f∗ v ≤ ⨆ x ∈ dom f, phi_Ereal f x v`
-    -- For all `i ∈ E`, `⟪v,i⟫ - f i ≤ ⨆ x, phi_Ereal f x v`
+  · -- (≤) Show that `f∗ v ≤ ⨆ x ∈ dom f, φ.toEReal f x v`
+    -- For all `i ∈ E`, `⟪v,i⟫ - f i ≤ ⨆ x, φ.toEReal f x v`
     apply iSup_le
     -- `x` is an arbitrary element of `E`
     intro x
@@ -258,8 +258,8 @@ lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = �
       -- Let `x` be the element of `dom f`
       let x : dom f := ⟨x, hx⟩
       -- `⟪v, x⟫ - f x` is bounded by the supremum over `dom f`
-      have h2 : ⟪v, x⟫ - f x ≤ ⨆ y : dom f, phi_EReal f y v := by
-        rw[← phi_Ereal.eq f x]
+      have h2 : ⟪v, x⟫ - f x ≤ ⨆ y : dom f, φ.toEReal f y v := by
+        rw[← φ.toEReal.eq f x]
         exact le_iSup_iff.mpr fun b a ↦ a x
       exact h2
     · -- Case 2: `x ∉ dom f`
@@ -271,18 +271,19 @@ lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = �
         exact hx ⟨hne, h x⟩
       -- Since `f x = ⊤`, then `⟪v, x⟫ - f x = ⊥` and the inequality holds trivially
       simp [htop]
-  · -- (≥) Show that `f∗ v ≥ ⨆ x ∈ dom f, phi_Ereal f x v`
-    -- For all `x ∈ dom f, phi_Ereal f x v ≤ f∗ v`
+  · -- (≥) Show that `f∗ v ≥ ⨆ x ∈ dom f, φ.toEReal f x v`
+    -- For all `x ∈ dom f, φ.toEReal f x v ≤ f∗ v`
     apply iSup_le
     intro x
     -- The supremum over `dom f` is bounded by `f∗ v`
     have h2 : ⟪v, x⟫ - f x ≤ f∗ v := by exact le_iSup_iff.mpr fun b a ↦ a x
-    -- Rewrite `phi_Ereal f x v` as `⟪v, x⟫ - f x` and apply the inequality
-    rw[phi_Ereal.eq]
+    -- Rewrite `φ.toEReal f x v` as `⟪v, x⟫ - f x` and apply the inequality
+    rw[φ.toEReal.eq]
     exact le_of_eq_of_le rfl h2
 
 -- No clue how to handle this yet
-lemma phi_iSup.convex : ConvexOn ℝ Set.univ (fun v => ⨆ x : dom f, phi f x v) := by
+lemma phi_iSup.convex : ConvexOn ℝ Set.univ (fun v => ⨆ x : dom f, φ f x v) := by
+
   sorry
 
 
@@ -291,17 +292,17 @@ lemma phi_iSup.convex : ConvexOn ℝ Set.univ (fun v => ⨆ x : dom f, phi f x v
 -- def epi : Set (E × ℝ) := {(x, c) | f x ≤ c}
 def epi : Set (E × ℝ) := {p : E × ℝ | p.1 ∈ Set.univ ∧ f p.1 ≤ p.2}
 
-#check (phi.convex f _).convex_epigraph --  (phi.convex f _) : Convex ℝ {p | p.1 ∈ Set.univ ∧ phi f _ p.1 ≤ p.2}
+#check (φ.convex f _).convex_epigraph --  (φ.convex f _) : Convex ℝ {p | p.1 ∈ Set.univ ∧ phi f _ p.1 ≤ p.2}
 
 
-lemma phi_EReal.epi_convex (x : dom f) : Convex ℝ (epi (phi_EReal f x)) := by
-  simp only [epi, phi_EReal]
+lemma φ.toEReal.epi_convex (x : dom f) : Convex ℝ (epi (φ.toEReal f x)) := by
+  simp only [epi, φ.toEReal]
   norm_cast
-  exact (phi.convex f x).convex_epigraph
+  exact (φ.convex f x).convex_epigraph
 
-lemma phi.iSup_epi_convex : Convex ℝ (epi (fun v : E => ⨆ x : dom f, phi_EReal f x v)) := by
+lemma phi.iSup_epi_convex : Convex ℝ (epi (fun v : E => ⨆ x : dom f, φ.toEReal f x v)) := by
   -- The epigraph of the supremum is the intersection of the epigraphs
-  have h_inter : epi (fun v : E => ⨆ x : dom f, phi_EReal f x v) = ⋂ x : dom f, epi (phi_EReal f x) := by
+  have h_inter : epi (fun v : E => ⨆ x : dom f, φ.toEReal f x v) = ⋂ x : dom f, epi (φ.toEReal f x) := by
     -- `p` is in the epigraph of the supremum iff `p` is in the intersection of the epigraphs
     ext p
     -- Membership in the intersection is equivalent to membership in each epigraph
@@ -310,15 +311,15 @@ lemma phi.iSup_epi_convex : Convex ℝ (epi (fun v : E => ⨆ x : dom f, phi_ERe
   rw[h_inter]
   -- The intersection of convex sets is convex
   apply convex_iInter
-  -- Each individual epigraph is convex by `phi_EReal.epi_convex`
+  -- Each individual epigraph is convex by `φ.toEReal.epi_convex`
   intro x
-  exact phi_EReal.epi_convex f x
+  exact φ.toEReal.epi_convex f x
 
 
 theorem fenchelConjugate.convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f∗) := by
-  -- `f∗` is the supremum of `phi_EReal f x` over `x ∈ dom f`
-  have hf : f∗ = fun v : E => ⨆ x : dom f, phi_EReal f x v := by
-    -- `f∗ v` is the supremum of `phi_EReal f x v` over `x ∈ dom f`
+  -- `f∗` is the supremum of `φ.toEReal f x` over `x ∈ dom f`
+  have hf : f∗ = fun v : E => ⨆ x : dom f, φ.toEReal f x v := by
+    -- `f∗ v` is the supremum of `φ.toEReal f x v` over `x ∈ dom f`
     ext v
     -- These two expressions are equal by `fenchelConjugate.eq_iSup_dom`
     rw[fenchelConjugate.eq_iSup_dom f h]
