@@ -276,8 +276,7 @@ lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = �
     apply iSup_le
     intro x
     -- The supremum over `dom f` is bounded by `f∗ v`
-    have h2 : ⟪v, x⟫ - f x ≤ f∗ v := by
-      exact le_iSup_iff.mpr fun b a ↦ a x
+    have h2 : ⟪v, x⟫ - f x ≤ f∗ v := by exact le_iSup_iff.mpr fun b a ↦ a x
     -- Rewrite `phi f x v` as `⟪v, x⟫ - f x` and apply the inequality
     rw[phi_Ereal.eq]
     exact le_of_eq_of_le rfl h2
