@@ -283,8 +283,12 @@ lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = �
 
 -- No clue how to handle this yet
 lemma phi_iSup.convex : ConvexOn ℝ Set.univ (fun v => ⨆ x : dom f, φ f x v) := by
-  sorry
-
+  unfold ConvexOn
+  constructor
+  · -- The universal set is convex
+    exact convex_univ
+  · intro x hx y hy a b ha hb hab
+    sorry
 
 -- Trying epigraph route
 -- The epigraph of `f`
@@ -335,5 +339,43 @@ theorem fenchelConjugate.convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f∗)
 -- `v` is a subgradient of `f` at `x` iff `v` is in the subdifferential of `f` at `x`
 -- theorem mem_subdifferential : IsSubgradient f v x ↔ v ∈ ∂f x := ⟨id, id⟩
 
+variable (β : Type*) [Semiring β] [PartialOrder β] [SMul β E] [SMul β EReal]
+def IsConvex : Prop := ConvexOn β Set.univ f
 
+variable [Semiring 𝕜] [PartialOrder 𝕜] [SMul 𝕜 E] [SMul 𝕜 EReal] [PosSMulMono 𝕜 EReal]
+
+
+theorem ConvexOn.isup (g : F → (E → EReal)) (hg : ∀ i, ConvexOn 𝕜 Set.univ (g i)) : ConvexOn 𝕜 Set.univ (⨆ i, g i) := by
+  unfold ConvexOn
+  constructor
+  · exact convex_univ
+  · intro x hx y hy a b ha hb hab
+    rw [@iSup_apply]
+    rw [@iSup_le_iff]
+    intro i
+    calc
+      g i (a • x + b • y) ≤ a • g i x + b • g i y := (hg i).right hx hy ha hb hab
+      _ ≤ a • (⨆ i, g i) x + b • (⨆ i, g i) y := by
+        apply add_le_add
+        · refine smul_le_smul_of_nonneg_left ?_ ha
+          · rw [@iSup_apply]
+            exact le_iSup_iff.mpr fun b a ↦ a i
+        · refine smul_le_smul_of_nonneg_left ?_ hb
+          · rw [@iSup_apply]
+            exact le_iSup_iff.mpr fun b a ↦ a i
+
+
+
+-- theorem ConvexOn.isup' (g : F → (E → EReal)) (hg : ∀ i, ConvexOn 𝕜 s (g i)) (hf : f = ⨆ i, g i) : ConvexOn 𝕜 Set.univ f := by
+--   unfold ConvexOn
+--   constructor
+--   · exact convex_univ
+--   · intro x hx y hy a b ha hb hab
+--     rw [hf]
+--     rw [@iSup_apply]
+--     rw[@iSup_le_iff]
+--     -- rw [@iSup_apply]
+--     -- rw [@iSup_le_iff]
+--     -- intro i
+--     -- rw??
 #min_imports
