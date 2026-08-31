@@ -339,9 +339,6 @@ theorem fenchelConjugate.convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f∗)
 -- `v` is a subgradient of `f` at `x` iff `v` is in the subdifferential of `f` at `x`
 -- theorem mem_subdifferential : IsSubgradient f v x ↔ v ∈ ∂f x := ⟨id, id⟩
 
-variable (β : Type*) [Semiring β] [PartialOrder β] [SMul β E] [SMul β EReal]
-def IsConvex : Prop := ConvexOn β Set.univ f
-
 variable [Semiring 𝕜] [PartialOrder 𝕜] [SMul 𝕜 E] [SMul 𝕜 EReal] [PosSMulMono 𝕜 EReal]
 
 
@@ -364,18 +361,4 @@ theorem ConvexOn.isup (g : F → (E → EReal)) (hg : ∀ i, ConvexOn 𝕜 Set.u
           · rw [@iSup_apply]
             exact le_iSup_iff.mpr fun b a ↦ a i
 
-
-
--- theorem ConvexOn.isup' (g : F → (E → EReal)) (hg : ∀ i, ConvexOn 𝕜 s (g i)) (hf : f = ⨆ i, g i) : ConvexOn 𝕜 Set.univ f := by
---   unfold ConvexOn
---   constructor
---   · exact convex_univ
---   · intro x hx y hy a b ha hb hab
---     rw [hf]
---     rw [@iSup_apply]
---     rw[@iSup_le_iff]
---     -- rw [@iSup_apply]
---     -- rw [@iSup_le_iff]
---     -- intro i
---     -- rw??
 #min_imports
