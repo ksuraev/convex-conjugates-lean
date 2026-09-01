@@ -236,6 +236,7 @@ lemma φ.convex (x : dom f) : ConvexOn ℝ Set.univ (φ f x) := by
 -- Coercion of φ to an EReal function
 def φ.toEReal (x : dom f) : E → EReal := fun v => (φ f x v : EReal)
 
+
 -- helper
 lemma φ.toEReal.eq (x : dom f) : φ.toEReal f x v = ⟪v,x⟫ - f x := by
   -- Since `x ∈ dom f`, `f x` is finite
@@ -281,21 +282,13 @@ lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = �
     rw[φ.toEReal.eq]
     exact le_of_eq_of_le rfl h2
 
--- No clue how to handle this yet
-lemma phi_iSup.convex : ConvexOn ℝ Set.univ (fun v => ⨆ x : dom f, φ f x v) := by
-  unfold ConvexOn
-  constructor
-  · -- The universal set is convex
-    exact convex_univ
-  · intro x hx y hy a b ha hb hab
-    sorry
 
 -- Trying epigraph route
 -- The epigraph of `f`
 -- def epi : Set (E × ℝ) := {(x, c) | f x ≤ c}
 def epi : Set (E × ℝ) := {p : E × ℝ | p.1 ∈ Set.univ ∧ f p.1 ≤ p.2}
 
-#check (φ.convex f _).convex_epigraph --  (φ.convex f _) : Convex ℝ {p | p.1 ∈ Set.univ ∧ phi f _ p.1 ≤ p.2}
+-- #check (φ.convex f _).convex_epigraph --  (φ.convex f _) : Convex ℝ {p | p.1 ∈ Set.univ ∧ phi f _ p.1 ≤ p.2}
 
 
 lemma φ.toEReal.epi_convex (x : dom f) : Convex ℝ (epi (φ.toEReal f x)) := by
@@ -332,15 +325,15 @@ theorem fenchelConjugate.convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f∗)
   exact φ.iSup_epi_convex f
 
 -- Leaving for now because I needed to understand the linear mapping stuff
--- variable (β : Type*) [Semiring β] [PartialOrder β] [SMul β E] [SMul β EReal]
+variable (β : Type*) [Semiring β] [PartialOrder β] [SMul β E] [SMul β EReal]
 -- def IsConvex : Prop := ConvexOn β Set.univ f
 
 -- unused for now
 -- `v` is a subgradient of `f` at `x` iff `v` is in the subdifferential of `f` at `x`
 -- theorem mem_subdifferential : IsSubgradient f v x ↔ v ∈ ∂f x := ⟨id, id⟩
 
-variable [Semiring 𝕜] [PartialOrder 𝕜] [SMul 𝕜 E] [SMul 𝕜 EReal] [PosSMulMono 𝕜 EReal]
 
+variable [Semiring 𝕜] [PartialOrder 𝕜] [SMul 𝕜 E] [SMul 𝕜 EReal] [PosSMulMono 𝕜 EReal]
 
 theorem ConvexOn.isup (g : F → (E → EReal)) (hg : ∀ i, ConvexOn 𝕜 Set.univ (g i)) : ConvexOn 𝕜 Set.univ (⨆ i, g i) := by
   unfold ConvexOn
@@ -360,5 +353,16 @@ theorem ConvexOn.isup (g : F → (E → EReal)) (hg : ∀ i, ConvexOn 𝕜 Set.u
         · refine smul_le_smul_of_nonneg_left ?_ hb
           · rw [@iSup_apply]
             exact le_iSup_iff.mpr fun b a ↦ a i
+
+
+-- Copied from above and this doesn't work for many many reasons
+variable [SMul 𝕜 ℝ]
+
+lemma φ.toEReal.convex (x : dom f) : ConvexOn 𝕜 Set.univ (φ.toEReal f x) := by
+  have hinner : ConvexOn 𝕜 Set.univ (inner' f x) := by
+    exact inner'.convex f x
+  have h := hinner.add_const (-(f x).toReal)
+  exact ConvexOn.congr h fun ⦃x_1⦄ ↦ congrFun rfl
+
 
 #min_imports
