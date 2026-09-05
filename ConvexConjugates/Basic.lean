@@ -19,8 +19,25 @@ local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 variable (f : E → EReal)
 
+/-
+`IsSubgradient` and `subdifferential` are based on the definitions in Optlib
+https://github.com/optsuite/optlib/blob/main/Optlib/Convex/Subgradient.lean
+-/
+
+/-- `v` is a subgradient of `f` at `x` if `⟪v, y⟫ - ⟪v, x⟫ ≤ f y - f x` for all `y`. -/
+def IsSubgradient (v x : E) : Prop := ∀ y, ⟪v, y⟫ - ⟪v,x⟫ ≤ f y - f x
+
+/-- The subdifferential of `f` at `x` is the set of all subgradients of `f` at `x`. -/
+def subdifferential (x : E) : Set E := {v : E | IsSubgradient f v x}
+
+-- Notation for the subdifferential: `∂f`
+local prefix:max "∂" => subdifferential
+
 /-- The effective domain of `f` is the set of `x` for which `f x` is finite. -/
 def dom : Set E := {x : E | f x ≠ ⊤ ∧ f x ≠ ⊥}
+
+-- The epigraph of `f`
+def epi : Set (E × ℝ) := {p : E × ℝ | p.1 ∈ Set.univ ∧ f p.1 ≤ p.2}
 
 /-- A function `f` is proper if its domain is nonempty. -/
 def IsProper : Prop := dom f ≠ ∅
@@ -31,8 +48,11 @@ noncomputable def fenchelConjugate (v : E) : EReal := ⨆ x : E, ⟪v, x⟫ - f 
 -- Notation for the Fenchel conjugate of f: `f∗`
 local postfix:max "∗" => fenchelConjugate
 
+/-- The Fenchel biconjugate of `f` is the Fenchel conjugate of `f∗`. -/
+noncomputable def fenchelBiconjugate (x : E) : EReal := f∗∗ x
+
 /-- If `f` is proper, then its Fenchel conjugate `f∗ v` is not `⊥` for any `v ∈ E`. -/
-lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
+lemma fenchelConjugate.ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
   -- Assume that `f` is proper
   intro h
   unfold fenchelConjugate
@@ -49,31 +69,19 @@ lemma fenchelConjugate_ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
   exact compareOfLessAndEq_eq_lt.mp rfl
 
 /-- For a proper function `f` and `x` such that `f x ≠ ⊥`, the Fenchel-Young inequality gives `⟪v, x⟫ ≤ f x + f∗ v`. -/
-theorem fenchel_young (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : ⟪v,x⟫ ≤ f x + f∗ v := by
+theorem fenchel_young_inequality (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : ⟪v,x⟫ ≤ f x + f∗ v := by
   -- From the definition of `f∗`, we have `f∗ v ≥ ⟪v,x⟫ - f x`
   have h3 : f∗ v ≥ ⟪v,x⟫ - f x := by exact le_iSup_iff.mpr fun b a ↦ a x
   -- Rewrite the inequality with `≤`
   rw[ge_iff_le] at h3
   -- Since `f x ≠ ⊥` and `f∗ v ≠ ⊥`, add `f x` to both sides
-  rw [EReal.sub_le_iff_le_add (Or.inl h1) (Or.inr (fenchelConjugate_ne_bot f v h2))] at h3
+  rw [EReal.sub_le_iff_le_add (Or.inl h1) (Or.inr (fenchelConjugate.ne_bot f v h2))] at h3
   -- Match the order of the terms using commutativity
   rw[add_comm]
   exact h3
 
-/-- The Fenchel biconjugate of `f` is the Fenchel conjugate of `f∗`. -/
-noncomputable def fenchelBiconjugate (x : E) : EReal := f∗∗ x
-
-/-
-Note: doing this below also works
-
-unfold fenchelConjugate
-simp only [real_inner_comm]
-
-Regular `rw` without `conv` or `simp only` does not work because `rw` cannot rewrite subterms containing bound variables. The inner product is in a "binder".
-`conv in` works because we can get inside the binder and rewrite. The simp only works for the same reason
--/
 /-- The Fenchel biconjugate of `f` is the supremum of `⟪v, x⟫ - f∗ v` over `v`. -/
-lemma fenchelBiconjugate_eq_sup (x : E) : f∗∗ x = ⨆ v : E, ⟪v, x⟫ - f∗ v := by
+lemma fenchelBiconjugate.eq_sup (x : E) : f∗∗ x = ⨆ v : E, ⟪v, x⟫ - f∗ v := by
   unfold fenchelConjugate
   -- Apply symmetry to match the inner-product ordering
   conv in ⟪_,_⟫ =>
@@ -82,7 +90,7 @@ lemma fenchelBiconjugate_eq_sup (x : E) : f∗∗ x = ⨆ v : E, ⟪v, x⟫ - f�
 /-- For proper `f` with `f x ≠ ⊥`, the Fenchel biconjugate satisfies `f∗∗ x ≤ f x`. -/
 theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f∗∗ x ≤ f x := by
   -- Write `f∗∗ x` as a supremum over `v ∈ E`
-  rw[fenchelBiconjugate_eq_sup]
+  rw[fenchelBiconjugate.eq_sup]
   -- Since the supremum of `⟪v,x⟫ - f∗ v` over all `v ∈ E` is `≤ f x` then `∀ i, ⟪i,x⟫ - f∗ i ≤ f x`
   apply iSup_le
   -- Suppose `v` is an arbitrary element of `E`
@@ -90,21 +98,7 @@ theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f�
   -- Move `f∗ v` to the other side of the inequality to get `⟪v,x⟫ ≤ f x + f∗ v`
   apply EReal.sub_le_of_le_add
   -- `⟪v,x⟫ ≤ f x + f∗ v` is exactly the Fenchel-Young inequality
-  exact fenchel_young f v x h1 h2
-
-/-
-`IsSubgradient`, `subdifferential`, and `mem_subdifferential` are based on the definitions in Optlib
-https://github.com/optsuite/optlib/blob/main/Optlib/Convex/Subgradient.lean
--/
-
-/-- `v` is a subgradient of `f` at `x` if `⟪v, y⟫ - ⟪v, x⟫ ≤ f y - f x` for all `y`. -/
-def IsSubgradient (v x : E) : Prop := ∀ y, ⟪v, y⟫ - ⟪v,x⟫ ≤ f y - f x
-
-/-- The subdifferential of `f` at `x` is the set of all subgradients of `f` at `x`. -/
-def subdifferential (x : E) : Set E := {v : E | IsSubgradient f v x}
-
--- Notation for the subdifferential: `∂f`
-local prefix:max "∂" => subdifferential
+  exact fenchel_young_inequality f v x h1 h2
 
 /-- The subdifferential of a proper function `f` at `x` is nonempty if `f y ≠ ⊥` for all `y ∈ E`. -/
 lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ ⊥ := by
@@ -120,7 +114,7 @@ lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ 
   contradiction
 
 /-- For `x ∈ dom f`, `f x + f∗ v = ⟪v, x⟫` iff `f∗ v = ⟪v, x⟫ - f x`. -/
-lemma fenchelConjugate_sub_iff_add_eq (v : E) (x : dom f) : f x + f∗ v = ⟪v,x⟫ ↔ f∗ v = ⟪v,x⟫ - f x := by
+lemma fenchelConjugate.sub_iff_add_eq (v : E) (x : dom f) : f x + f∗ v = ⟪v,x⟫ ↔ f∗ v = ⟪v,x⟫ - f x := by
   -- Split the equivalence into two implications
   apply Iff.intro
   · -- (→) Assume `f x + f∗ v = ⟪v,x⟫`
@@ -146,7 +140,7 @@ theorem fenchel_young_eq.mp (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x 
   -- Assume `v ∈ ∂f x`
   intro hv
   -- Apply the equivalence between `f x + f∗ v = ⟪v,x⟫` and `f∗ v = ⟪v,x⟫ - f x`
-  rw[fenchelConjugate_sub_iff_add_eq f v x]
+  rw[fenchelConjugate.sub_iff_add_eq f v x]
   -- Split into two inequalities: `f∗ v ≤ ⟪v,x⟫ - f x` and `⟪v,x⟫ - f x ≤ f∗ v`
   apply le_antisymm
   · -- Case 1: `f∗ v ≤ ⟪v,x⟫ - f x`
@@ -167,14 +161,14 @@ theorem fenchel_young_eq.mp (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x 
     -- Rearrange the inequality using the fact that `f x` is finite
     rw [(EReal.sub_le_iff_le_add (Or.inl x.2.2) (Or.inl x.2.1)), add_comm]
     -- Close the goal using the Fenchel-Young inequality
-    exact fenchel_young f v x x.2.2 h
+    exact fenchel_young_inequality f v x x.2.2 h
 
 /-- If `f x + f∗ v = ⟪v,x⟫`, then `v` is a subgradient of `f` at `x`. -/
 theorem fenchel_young_eq.mpr (v : E) (x : dom f) (h : IsProper f) : f x + f∗ v = ⟪v,x⟫ → v ∈ ∂f x := by
   -- Assume `f x + f∗ v = ⟪v,x⟫` and `y ∈ E` in the subgradient inequality
   intro h_eq y
   -- Rewrite the equality `f x + f∗ v = ⟪v,x⟫` as `f∗ v = ⟪v,x⟫ - f x` at h_eq
-  rw [fenchelConjugate_sub_iff_add_eq f v x] at h_eq
+  rw [fenchelConjugate.sub_iff_add_eq f v x] at h_eq
   -- Add `⟪v,x⟫` to both sides of the subgradient inequality
   rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))]
   -- Rewrite to group `⟪v,x⟫ - f x` together
@@ -190,7 +184,7 @@ theorem fenchel_young_eq.mpr (v : E) (x : dom f) (h : IsProper f) : f x + f∗ v
     -- A real number is not equal to `⊤`
     exact EReal.coe_ne_top (⟪v,x⟫ - (f x).toReal)
   -- Show that `f∗ v ≠ ⊥`
-  have h_ne_bot : f∗ v ≠ ⊥ := by exact fenchelConjugate_ne_bot f v h
+  have h_ne_bot : f∗ v ≠ ⊥ := by exact fenchelConjugate.ne_bot f v h
   -- `⟪v,y⟫ - f y ≤ sup_{y ∈ E} ⟨v,y⟩ - f y = f∗ v`
   have h_le : ⟪v,y⟫ - f y ≤ f∗ v:= by exact le_iSup_iff.mpr fun b a ↦ a y
   -- Add `f y` to both sides of the inequality in h_le to get `⟪v,y⟫ ≤ f∗ v + f y`
@@ -205,66 +199,53 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x ↔
   · exact fenchel_young_eq.mpr f v x h
 
 
+-- Convexity of the Fenchel conjugate
+/-- For fixed `x ∈ dom f`, `inner f x` is the real-valued function `v ↦ ⟪v, x⟫`. -/
+def inner (x : dom f) : E → ℝ := fun v => ⟪v, x⟫
 
-
-
--- CONVEXITY
--- innerₗ (mathlib) is the inner product as bilinear map
-#check (innerₗ E) -- innerₗ E : E →ₗ[ℝ] E →ₗ[ℝ] ℝ
-
-lemma innerₗ.convex (x : E) : ConvexOn ℝ Set.univ ((innerₗ E) x) := by
-  -- convex_univ is the proof that the universal set is convex
-  exact LinearMap.convexOn ((innerₗ E) x) convex_univ
-
--- Using our defs
-def inner' (x : dom f) : E → ℝ := fun v => ⟪v, x⟫
-
-lemma inner'.convex (x : dom f) : ConvexOn ℝ Set.univ (inner' f x) := by
-  -- .flip flips the arguments of the inner product
+/-- For fixed `x ∈ dom f`, the function `inner f x` is convex. -/
+lemma inner.convex (x : dom f) : ConvexOn ℝ Set.univ (inner f x) := by
+  -- `flip` fixes `x` in the second argument, giving `v ↦ ⟪v, x⟫`
   exact LinearMap.convexOn ((innerₗ E).flip x) convex_univ
 
--- In Easy Path book, they define φₓ: ℝⁿ → ℝ, φₓ(v) = ⟨v, x⟩ - f(x) for x ∈ dom f and v ∈ ℝⁿ
-def φ (x : dom f) : E → ℝ := fun v => inner' f x v - (f x).toReal
+/-- For fixed `x ∈ dom f`, `φ f x` is the real-valued function `v ↦ ⟪v, x⟫ - f x`. -/
+def φ (x : dom f) : E → ℝ := fun v => inner f x v - (f x).toReal
 
--- this is convex because it is the sum of a linear function and a constant
+/-- For fixed `x ∈ dom f`, `φ f x` is convex. -/
 lemma φ.convex (x : dom f) : ConvexOn ℝ Set.univ (φ f x) := by
-  have hinner : ConvexOn ℝ Set.univ (inner' f x) := by
-    exact inner'.convex f x
+  have hinner : ConvexOn ℝ Set.univ (inner f x) := by
+    exact inner.convex f x
   have h := hinner.add_const (-(f x).toReal)
   exact ConvexOn.congr h fun ⦃x_1⦄ ↦ congrFun rfl
 
--- Coercion of φ to an EReal function
+/-- `φ.toEReal f x` is `φ f x` as an `EReal`-valued function. -/
 def φ.toEReal (x : dom f) : E → EReal := fun v => (φ f x v : EReal)
 
-
--- helper
-lemma φ.toEReal.eq (x : dom f) : φ.toEReal f x v = ⟪v,x⟫ - f x := by
+/-- For `x ∈ dom f`, coercing `φ f x v` to `EReal` gives `⟪v, x⟫ - f x`. -/
+lemma φ.toEReal_eq (x : dom f) : φ.toEReal f x v = ⟪v,x⟫ - f x := by
   -- Since `x ∈ dom f`, `f x` is finite
   rw [← EReal.coe_toReal x.2.1 x.2.2]
   -- Prove the equality using `ac_rfl` for associative and commutative operators
   ac_rfl
 
--- In line with the book, we need to show f∗ v = ⨆ x ∈ dom f,  φₓ(v) for v ∈ E?
--- Then show that this is convex (the hard part)
+/-- If `f` never takes the value `⊥`, then `f∗ v` is the supremum of `φ.toEReal f x v` over `x ∈ dom f`. -/
 lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = ⨆ x : dom f, φ.toEReal f x v := by
   apply le_antisymm
   · -- (≤) Show that `f∗ v ≤ ⨆ x ∈ dom f, φ.toEReal f x v`
-    -- For all `i ∈ E`, `⟪v,i⟫ - f i ≤ ⨆ x, φ.toEReal f x v`
+    -- For all `x ∈ E`, `⟪v,x⟫ - f x ≤ ⨆ x, φ.toEReal f x v`
     apply iSup_le
-    -- `x` is an arbitrary element of `E`
     intro x
-    -- Split into two cases: `x ∈ dom f` and `x ∉ dom f`
+    -- Split according to whether `x` belongs to `dom f`
     by_cases hx : x ∈ dom f
     · -- Case 1: `x ∈ dom f`
       -- Let `x` be the element of `dom f`
-      let x : dom f := ⟨x, hx⟩
-      -- `⟪v, x⟫ - f x` is bounded by the supremum over `dom f`
-      have h2 : ⟪v, x⟫ - f x ≤ ⨆ y : dom f, φ.toEReal f y v := by
-        rw[← φ.toEReal.eq f x]
-        exact le_iSup_iff.mpr fun b a ↦ a x
-      exact h2
+      let x' : dom f := ⟨x, hx⟩
+      -- Rewrite `⟪v, x⟫ - f x` as `φ.toEReal f x' v`
+      rw [← φ.toEReal_eq f x']
+      -- This is bounded by the supremum over `dom f`
+      exact le_iSup (fun y : dom f => φ.toEReal f y v) x'
     · -- Case 2: `x ∉ dom f`
-      -- Since `f x ≠ ⊥` for all `x`, then if `x ∉ dom f, f x = ⊤`
+      -- If `x ∉ dom f`, then `f x = ⊤` since `f x ≠ ⊥`
       have htop : f x = ⊤ := by
         -- Assume for contradiction that `f x ≠ ⊤`
         by_contra hne
@@ -276,26 +257,18 @@ lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = �
     -- For all `x ∈ dom f, φ.toEReal f x v ≤ f∗ v`
     apply iSup_le
     intro x
-    -- The supremum over `dom f` is bounded by `f∗ v`
-    have h2 : ⟪v, x⟫ - f x ≤ f∗ v := by exact le_iSup_iff.mpr fun b a ↦ a x
-    -- Rewrite `φ.toEReal f x v` as `⟪v, x⟫ - f x` and apply the inequality
-    rw[φ.toEReal.eq]
-    exact le_of_eq_of_le rfl h2
+    -- Rewrite `φ.toEReal f x v` as `⟪v, x⟫ - f x`
+    rw [φ.toEReal_eq f x]
+    -- This is bounded by the supremum defining `f∗ v`
+    exact le_iSup (fun y : E => ⟪v, y⟫ - f y) x
 
-
--- Trying epigraph route
--- The epigraph of `f`
--- def epi : Set (E × ℝ) := {(x, c) | f x ≤ c}
-def epi : Set (E × ℝ) := {p : E × ℝ | p.1 ∈ Set.univ ∧ f p.1 ≤ p.2}
-
--- #check (φ.convex f _).convex_epigraph --  (φ.convex f _) : Convex ℝ {p | p.1 ∈ Set.univ ∧ phi f _ p.1 ≤ p.2}
-
-
+/-- For fixed `x ∈ dom f`, the epigraph of `φ.toEReal f x` is convex. -/
 lemma φ.toEReal.epi_convex (x : dom f) : Convex ℝ (epi (φ.toEReal f x)) := by
   simp only [epi, φ.toEReal]
   norm_cast
   exact (φ.convex f x).convex_epigraph
 
+/-- The epigraph of the supremum of `φ.toEReal f x` over `x ∈ dom f` is convex. -/
 lemma φ.iSup_epi_convex : Convex ℝ (epi (fun v : E => ⨆ x : dom f, φ.toEReal f x v)) := by
   -- The epigraph of the supremum is the intersection of the epigraphs
   have h_inter : epi (fun v : E => ⨆ x : dom f, φ.toEReal f x v) = ⋂ x : dom f, epi (φ.toEReal f x) := by
@@ -311,8 +284,8 @@ lemma φ.iSup_epi_convex : Convex ℝ (epi (fun v : E => ⨆ x : dom f, φ.toERe
   intro x
   exact φ.toEReal.epi_convex f x
 
-
-theorem fenchelConjugate.convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f∗) := by
+/-- The epigraph of the Fenchel conjugate `f∗` is convex if `f x ≠ ⊥` for all `x`. -/
+theorem fenchelConjugate.epi_convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f∗) := by
   -- `f∗` is the supremum of `φ.toEReal f x` over `x ∈ dom f`
   have hf : f∗ = fun v : E => ⨆ x : dom f, φ.toEReal f x v := by
     -- `f∗ v` is the supremum of `φ.toEReal f x v` over `x ∈ dom f`
@@ -324,45 +297,34 @@ theorem fenchelConjugate.convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f∗)
   -- The epigraph of the supremum is convex
   exact φ.iSup_epi_convex f
 
--- Leaving for now because I needed to understand the linear mapping stuff
-variable (β : Type*) [Semiring β] [PartialOrder β] [SMul β E] [SMul β EReal]
--- def IsConvex : Prop := ConvexOn β Set.univ f
-
--- unused for now
--- `v` is a subgradient of `f` at `x` iff `v` is in the subdifferential of `f` at `x`
--- theorem mem_subdifferential : IsSubgradient f v x ↔ v ∈ ∂f x := ⟨id, id⟩
-
-
 variable [Semiring 𝕜] [PartialOrder 𝕜] [SMul 𝕜 E] [SMul 𝕜 EReal] [PosSMulMono 𝕜 EReal]
+variable {s : Set E}
 
-theorem ConvexOn.isup (g : F → (E → EReal)) (hg : ∀ i, ConvexOn 𝕜 Set.univ (g i)) : ConvexOn 𝕜 Set.univ (⨆ i, g i) := by
-  unfold ConvexOn
+theorem ConvexOn.isup (hs : Convex 𝕜 s) (g : F → (E → EReal)) (hg : ∀ i, ConvexOn 𝕜 s (g i)) : ConvexOn 𝕜 s (⨆ i, g i) := by
+  -- Split the goal into two parts: `s` is convex and `⨆ i, g i` is convex on `s`
   constructor
-  · exact convex_univ
-  · intro x hx y hy a b ha hb hab
-    rw [@iSup_apply]
-    rw [@iSup_le_iff]
+  · -- `s` is convex by assumption
+    exact hs
+  · -- `⨆ i, g i` is convex on `s`
+    intro x hx y hy a b ha hb hab
+    -- `(⨆ i, g i) (a • x + b • y) = ⨆ i, g i (a • x + b • y)`
+    rw [iSup_apply]
+    -- For all `i`, `g i (a • x + b • y) ≤ a • (⨆ i, g i) x + b • (⨆ i, g i) y`
+    rw [iSup_le_iff]
     intro i
     calc
       g i (a • x + b • y) ≤ a • g i x + b • g i y := (hg i).right hx hy ha hb hab
       _ ≤ a • (⨆ i, g i) x + b • (⨆ i, g i) y := by
+        -- Show a • g i x ≤ a • (⨆ i, g i) x and b • g i y ≤ b • (⨆ i, g i) y
         apply add_le_add
-        · refine smul_le_smul_of_nonneg_left ?_ ha
-          · rw [@iSup_apply]
+        · -- a • b₁ ≤ a • b₂ if b₁ ≤ b₂ and a ≥ 0
+          refine smul_le_smul_of_nonneg_left ?_ ha
+          · rw [iSup_apply]
             exact le_iSup_iff.mpr fun b a ↦ a i
-        · refine smul_le_smul_of_nonneg_left ?_ hb
-          · rw [@iSup_apply]
+        · -- b • b₁ ≤ b • b₂ if b₁ ≤ b₂ and b ≥ 0
+          refine smul_le_smul_of_nonneg_left ?_ hb
+          · rw [iSup_apply]
             exact le_iSup_iff.mpr fun b a ↦ a i
-
-
--- Copied from above and this doesn't work for many many reasons
-variable [SMul 𝕜 ℝ]
-
-lemma φ.toEReal.convex (x : dom f) : ConvexOn 𝕜 Set.univ (φ.toEReal f x) := by
-  have hinner : ConvexOn 𝕜 Set.univ (inner' f x) := by
-    exact inner'.convex f x
-  have h := hinner.add_const (-(f x).toReal)
-  exact ConvexOn.congr h fun ⦃x_1⦄ ↦ congrFun rfl
 
 
 #min_imports
