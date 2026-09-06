@@ -213,10 +213,13 @@ def φ (x : dom f) : E → ℝ := fun v => inner f x v - (f x).toReal
 
 /-- For fixed `x ∈ dom f`, `φ f x` is convex. -/
 lemma φ.convex (x : dom f) : ConvexOn ℝ Set.univ (φ f x) := by
+  -- The function `inner f x` is convex by `inner.convex`
   have hinner : ConvexOn ℝ Set.univ (inner f x) := by
     exact inner.convex f x
+  -- Adding a constant to a convex function preserves convexity
   have h := hinner.add_const (-(f x).toReal)
-  exact ConvexOn.congr h fun ⦃x_1⦄ ↦ congrFun rfl
+  -- This is exactly `φ f x`
+  exact ConvexOn.congr h fun ⦃v⦄ ↦ congrFun rfl
 
 /-- `φ.toEReal f x` is `φ f x` as an `EReal`-valued function. -/
 def φ.toEReal (x : dom f) : E → EReal := fun v => (φ f x v : EReal)
@@ -264,8 +267,11 @@ lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = �
 
 /-- For fixed `x ∈ dom f`, the epigraph of `φ.toEReal f x` is convex. -/
 lemma φ.toEReal.epi_convex (x : dom f) : Convex ℝ (epi (φ.toEReal f x)) := by
+  -- Expand the definition of the epigraph of `φ.toEReal f x`
   simp only [epi, φ.toEReal]
+  -- Normalise the EReal coercion to a real number since `f x` is finite
   norm_cast
+  -- The epigraph of `φ.toEReal f x` is the epigraph of `φ f x` as a real-valued function
   exact (φ.convex f x).convex_epigraph
 
 /-- The epigraph of the supremum of `φ.toEReal f x` over `x ∈ dom f` is convex. -/
