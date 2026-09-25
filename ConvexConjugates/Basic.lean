@@ -6,19 +6,17 @@ set_option linter.style.longLine false
 /-!
 # Convex Conjugates
 
-This file develops a preliminary formalisation of Fenchel conjugates for
-extended-real-valued functions.
+This file develops a preliminary formalisation of Fenchel conjugates for extended-real-valued functions.
 
 The main results include:
-* the Fenchel--Young inequality;
-* the Fenchel--Young equality;
+* the Fenchel-Young inequality;
+* the Fenchel-Young equality;
 * the Fenchel biconjugate inequality;
 * convexity properties of the Fenchel conjugate.
 
 ## TODO
 - Replace the definition of `fenchelConjugate` to apply on the dual space of `E`
-- Figure out naming conventions
-- Write proper header for file - overview, key declarations, references
+- Check naming conventions
 - Discuss whether to redefine the domain as the set of x where f(x) is real
 -/
 
@@ -26,6 +24,8 @@ local notation "⟪" x ", " y "⟫" => @inner ℝ _ _ x y
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 variable (f : E → EReal)
+
+/-! ## Definitions -/
 
 /-
 `IsSubgradient` and `subdifferential` are based on the definitions in Optlib
@@ -59,6 +59,17 @@ local postfix:max "∗" => fenchelConjugate
 /-- The Fenchel biconjugate of `f` is the Fenchel conjugate of `f∗`. -/
 noncomputable def fenchelBiconjugate (x : E) : EReal := f∗∗ x
 
+/-- For fixed `x ∈ dom f`, `inner f x` is the real-valued function `v ↦ ⟪v, x⟫`. -/
+def inner (x : dom f) : E → ℝ := fun v => ⟪v, x⟫
+
+/-- For fixed `x ∈ dom f`, `φ f x` is the real-valued function `v ↦ ⟪v, x⟫ - f x`. -/
+def φ (x : dom f) : E → ℝ := fun v => inner f x v - (f x).toReal
+
+/-- `φ.toEReal f x` is `φ f x` as an `EReal`-valued function. -/
+def φ.toEReal (x : dom f) : E → EReal := fun v => (φ f x v : EReal)
+
+/-! ## Fenchel--Young inequality and equality -/
+
 /-- If `f` is proper, then its Fenchel conjugate `f∗ v` is not `⊥` for any `v ∈ E`. -/
 lemma fenchelConjugate.ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
   -- Assume that `f` is proper
@@ -87,39 +98,6 @@ theorem fenchel_young_inequality (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) 
   -- Match the order of the terms using commutativity
   rw[add_comm]
   exact h3
-
-/-- The Fenchel biconjugate of `f` is the supremum of `⟪v, x⟫ - f∗ v` over `v`. -/
-lemma fenchelBiconjugate.eq_sup (x : E) : f∗∗ x = ⨆ v : E, ⟪v, x⟫ - f∗ v := by
-  unfold fenchelConjugate
-  -- Apply symmetry to match the inner-product ordering
-  conv in ⟪_,_⟫ =>
-   rw [real_inner_comm]
-
-/-- For proper `f` with `f x ≠ ⊥`, the Fenchel biconjugate satisfies `f∗∗ x ≤ f x`. -/
-theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f∗∗ x ≤ f x := by
-  -- Write `f∗∗ x` as a supremum over `v ∈ E`
-  rw[fenchelBiconjugate.eq_sup]
-  -- Since the supremum of `⟪v,x⟫ - f∗ v` over all `v ∈ E` is `≤ f x` then `∀ i, ⟪i,x⟫ - f∗ i ≤ f x`
-  apply iSup_le
-  -- Suppose `v` is an arbitrary element of `E`
-  intro v
-  -- Move `f∗ v` to the other side of the inequality to get `⟪v,x⟫ ≤ f x + f∗ v`
-  apply EReal.sub_le_of_le_add
-  -- `⟪v,x⟫ ≤ f x + f∗ v` is exactly the Fenchel-Young inequality
-  exact fenchel_young_inequality f v x h1 h2
-
-/-- The subdifferential of a proper function `f` at `x` is nonempty if `f y ≠ ⊥` for all `y ∈ E`. -/
-lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ ⊥ := by
-  -- Assume that `∂f x ≠ ∅`, `y ∈ E`, and `f y = ⊥`
-  intro h_ne y h_fy
-  -- Since `∂f x ≠ ∅`, there exists `v ∈ ∂f x`
-  obtain ⟨v, hv⟩ := Set.nonempty_iff_ne_empty.mpr h_ne
-  -- Write the subgradient inequality using `y`
-  specialize hv y
-  -- Substitute `f y = ⊥` into the subgradient inequality to get `⟪v,y⟫ - ⟪v,x⟫ ≤ ⊥`
-  rw[h_fy, EReal.bot_sub] at hv
-  -- Since `⊥ < ⟪v,y⟫ - ⟪v,x⟫`, we have a contradiction
-  contradiction
 
 /-- For `x ∈ dom f`, `f x + f∗ v = ⟪v, x⟫` iff `f∗ v = ⟪v, x⟫ - f x`. -/
 lemma fenchelConjugate.sub_iff_add_eq (v : E) (x : dom f) : f x + f∗ v = ⟪v,x⟫ ↔ f∗ v = ⟪v,x⟫ - f x := by
@@ -206,18 +184,34 @@ theorem fenchel_young_eq (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x ↔
   · exact fenchel_young_eq.mp f v x h
   · exact fenchel_young_eq.mpr f v x h
 
+/-! ## Fenchel biconjugate -/
 
--- Convexity of the Fenchel conjugate
-/-- For fixed `x ∈ dom f`, `inner f x` is the real-valued function `v ↦ ⟪v, x⟫`. -/
-def inner (x : dom f) : E → ℝ := fun v => ⟪v, x⟫
+/-- The Fenchel biconjugate of `f` is the supremum of `⟪v, x⟫ - f∗ v` over `v`. -/
+lemma fenchelBiconjugate.eq_sup (x : E) : f∗∗ x = ⨆ v : E, ⟪v, x⟫ - f∗ v := by
+  unfold fenchelConjugate
+  -- Apply symmetry to match the inner-product ordering
+  conv in ⟪_,_⟫ =>
+   rw [real_inner_comm]
+
+/-- For proper `f` with `f x ≠ ⊥`, the Fenchel biconjugate satisfies `f∗∗ x ≤ f x`. -/
+theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f∗∗ x ≤ f x := by
+  -- Write `f∗∗ x` as a supremum over `v ∈ E`
+  rw[fenchelBiconjugate.eq_sup]
+  -- Since the supremum of `⟪v,x⟫ - f∗ v` over all `v ∈ E` is `≤ f x` then `∀ i, ⟪i,x⟫ - f∗ i ≤ f x`
+  apply iSup_le
+  -- Suppose `v` is an arbitrary element of `E`
+  intro v
+  -- Move `f∗ v` to the other side of the inequality to get `⟪v,x⟫ ≤ f x + f∗ v`
+  apply EReal.sub_le_of_le_add
+  -- `⟪v,x⟫ ≤ f x + f∗ v` is exactly the Fenchel-Young inequality
+  exact fenchel_young_inequality f v x h1 h2
+
+/-! ## Convexity of the Fenchel conjugate -/
 
 /-- For fixed `x ∈ dom f`, the function `inner f x` is convex. -/
 lemma inner.convex (x : dom f) : ConvexOn ℝ Set.univ (inner f x) := by
   -- `flip` fixes `x` in the second argument, giving `v ↦ ⟪v, x⟫`
   exact LinearMap.convexOn ((innerₗ E).flip x) convex_univ
-
-/-- For fixed `x ∈ dom f`, `φ f x` is the real-valued function `v ↦ ⟪v, x⟫ - f x`. -/
-def φ (x : dom f) : E → ℝ := fun v => inner f x v - (f x).toReal
 
 /-- For fixed `x ∈ dom f`, `φ f x` is convex. -/
 lemma φ.convex (x : dom f) : ConvexOn ℝ Set.univ (φ f x) := by
@@ -228,9 +222,6 @@ lemma φ.convex (x : dom f) : ConvexOn ℝ Set.univ (φ f x) := by
   have h := hinner.add_const (-(f x).toReal)
   -- This is exactly `φ f x`
   exact ConvexOn.congr h fun ⦃v⦄ ↦ congrFun rfl
-
-/-- `φ.toEReal f x` is `φ f x` as an `EReal`-valued function. -/
-def φ.toEReal (x : dom f) : E → EReal := fun v => (φ f x v : EReal)
 
 /-- For `x ∈ dom f`, coercing `φ f x v` to `EReal` gives `⟪v, x⟫ - f x`. -/
 lemma φ.toEReal_eq (x : dom f) : φ.toEReal f x v = ⟪v,x⟫ - f x := by
@@ -311,7 +302,13 @@ theorem fenchelConjugate.epi_convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f
   -- The epigraph of the supremum is convex
   exact φ.iSup_epi_convex f
 
-variable [Semiring 𝕜] [PartialOrder 𝕜] [SMul 𝕜 E] [SMul 𝕜 EReal] [PosSMulMono 𝕜 EReal]
+/-! ## Pointwise suprema of convex functions -/
+
+section ConvexISup
+
+variable {𝕜 E : Type*} {F : Sort*} [Semiring 𝕜] [PartialOrder 𝕜]
+variable [AddCommMonoid E] [SMul 𝕜 E]
+variable [SMul 𝕜 EReal] [PosSMulMono 𝕜 EReal] [AddCommMonoid EReal] [AddRightMono EReal] [AddLeftMono EReal]
 variable {s : Set E}
 
 /-- The pointwise supremum of an indexed family of convex functions is convex. -/
@@ -340,5 +337,22 @@ theorem ConvexOn.isup (hs : Convex 𝕜 s) (g : F → (E → EReal)) (hg : ∀ i
           refine smul_le_smul_of_nonneg_left ?_ hb
           · rw [iSup_apply]
             exact le_iSup_iff.mpr fun b a ↦ a i
+
+end ConvexISup
+
+/-! ## Auxiliary results -/
+
+/-- The subdifferential of a proper function `f` at `x` is nonempty if `f y ≠ ⊥` for all `y ∈ E`. -/
+lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ ⊥ := by
+  -- Assume that `∂f x ≠ ∅`, `y ∈ E`, and `f y = ⊥`
+  intro h_ne y h_fy
+  -- Since `∂f x ≠ ∅`, there exists `v ∈ ∂f x`
+  obtain ⟨v, hv⟩ := Set.nonempty_iff_ne_empty.mpr h_ne
+  -- Write the subgradient inequality using `y`
+  specialize hv y
+  -- Substitute `f y = ⊥` into the subgradient inequality to get `⟪v,y⟫ - ⟪v,x⟫ ≤ ⊥`
+  rw[h_fy, EReal.bot_sub] at hv
+  -- Since `⊥ < ⟪v,y⟫ - ⟪v,x⟫`, we have a contradiction
+  contradiction
 
 #min_imports
