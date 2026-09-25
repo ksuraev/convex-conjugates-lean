@@ -277,7 +277,7 @@ lemma fenchelConjugate.eq_iSup_dom (h : ∀ x, f x ≠ ⊥) (v : E) : f∗ v = �
 lemma φ.toEReal.epi_convex (x : dom f) : Convex ℝ (epi (φ.toEReal f x)) := by
   -- Expand the definition of the epigraph of `φ.toEReal f x`
   simp only [epi, φ.toEReal]
-  -- Normalise the EReal coercion to a real number since `f x` is finite
+  -- Reduce the `EReal` inequality between coerced real values to one in `ℝ`
   norm_cast
   -- The epigraph of `φ.toEReal f x` is the epigraph of `φ f x` as a real-valued function
   exact (φ.convex f x).convex_epigraph
