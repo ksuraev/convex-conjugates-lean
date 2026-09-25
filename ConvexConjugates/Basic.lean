@@ -1,11 +1,19 @@
 import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Data.EReal.Inv
 
 set_option linter.style.header false
 set_option linter.style.longLine false
 
 /-!
 # Convex Conjugates
+
+This file develops a preliminary formalisation of Fenchel conjugates for
+extended-real-valued functions.
+
+The main results include:
+* the Fenchel--Young inequality;
+* the Fenchel--Young equality;
+* the Fenchel biconjugate inequality;
+* convexity properties of the Fenchel conjugate.
 
 ## TODO
 - Replace the definition of `fenchelConjugate` to apply on the dual space of `E`
@@ -306,6 +314,7 @@ theorem fenchelConjugate.epi_convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f
 variable [Semiring 𝕜] [PartialOrder 𝕜] [SMul 𝕜 E] [SMul 𝕜 EReal] [PosSMulMono 𝕜 EReal]
 variable {s : Set E}
 
+/-- The pointwise supremum of an indexed family of convex functions is convex. -/
 theorem ConvexOn.isup (hs : Convex 𝕜 s) (g : F → (E → EReal)) (hg : ∀ i, ConvexOn 𝕜 s (g i)) : ConvexOn 𝕜 s (⨆ i, g i) := by
   -- Split the goal into two parts: `s` is convex and `⨆ i, g i` is convex on `s`
   constructor
@@ -331,6 +340,5 @@ theorem ConvexOn.isup (hs : Convex 𝕜 s) (g : F → (E → EReal)) (hg : ∀ i
           refine smul_le_smul_of_nonneg_left ?_ hb
           · rw [iSup_apply]
             exact le_iSup_iff.mpr fun b a ↦ a i
-
 
 #min_imports
