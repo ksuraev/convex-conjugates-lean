@@ -206,6 +206,7 @@ theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f�
   -- `⟪v,x⟫ ≤ f x + f∗ v` is exactly the Fenchel-Young inequality
   exact fenchel_young_inequality f v x h1 h2
 
+/-- For proper `f` with `∂f x ≠ ∅`, the Fenchel biconjugate satisfies `f∗∗ x = f x`. -/
 theorem fenchelBiconjugate_eq (x : dom f) (hproper : IsProper f) (hsub : ∂f x ≠ ∅) : f∗∗ x = f x := by
   -- Obtain `v ∈ ∂f x` using the nonemptiness of the subdifferential
   obtain ⟨v, hv⟩ := Set.nonempty_iff_ne_empty.mpr hsub
@@ -228,8 +229,7 @@ theorem fenchelBiconjugate_eq (x : dom f) (hproper : IsProper f) (hsub : ∂f x 
       exact EReal.coe_ne_top _ h_FY_eq.symm
     -- Rearrange the Fenchel-Young equality to isolate `f x`
     have hx : f x = ⟪v, x⟫ - f∗ v := by
-      rw [← h_FY_eq]
-      rw [← EReal.coe_toReal hfv_ne_top hfv_ne_bot]
+      rw [← h_FY_eq, ← EReal.coe_toReal hfv_ne_top hfv_ne_bot]
       rw[EReal.add_sub_cancel_right]
     -- Rewrite `f∗∗ x` as a supremum over `v ∈ E`
     rw [fenchelBiconjugate.eq_sup]
