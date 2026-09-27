@@ -206,6 +206,38 @@ theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f�
   -- `⟪v,x⟫ ≤ f x + f∗ v` is exactly the Fenchel-Young inequality
   exact fenchel_young_inequality f v x h1 h2
 
+theorem fenchelBiconjugate_eq (x : dom f) (hproper : IsProper f) (hsub : ∂f x ≠ ∅) : f∗∗ x = f x := by
+  -- Obtain `v ∈ ∂f x` using the nonemptiness of the subdifferential
+  obtain ⟨v, hv⟩ := Set.nonempty_iff_ne_empty.mpr hsub
+  -- Split the equality into two inequalities: `f∗∗ x ≤ f x` and `f x ≤ f∗∗ x`
+  apply le_antisymm
+  · -- (≤) Show that `f∗∗ x ≤ f x` using the Fenchel biconjugate inequality
+    exact fenchelBiconjugate_le f x x.2.2 hproper
+  · -- (≥) Show that `f x ≤ f∗∗ x`
+    -- Since `f` is proper, `f∗ v ≠ ⊥`
+    have hfv_ne_bot : f∗ v ≠ ⊥ := fenchelConjugate.ne_bot f v hproper
+    -- Since `v ∈ ∂f x`, the Fenchel-Young equality holds
+    have h_FY_eq : f x + f∗ v = ⟪v, x⟫ := (fenchel_young_eq f v x hproper).mp hv
+    -- Show that `f∗ v ≠ ⊤`
+    have hfv_ne_top : f∗ v ≠ ⊤ := by
+      -- Assume `f∗ v = ⊤` for contradiction
+      by_contra hfv_ne_top
+      -- Then, `f x + f∗ v = ⊤ = ⟪v,x⟫`
+      rw [hfv_ne_top, EReal.add_top_of_ne_bot x.2.2] at h_FY_eq
+      -- This contradicts the fact that `⟪v,x⟫` is finite
+      exact EReal.coe_ne_top _ h_FY_eq.symm
+    -- Rearrange the Fenchel-Young equality to isolate `f x`
+    have hx : f x = ⟪v, x⟫ - f∗ v := by
+      rw [← h_FY_eq]
+      rw [← EReal.coe_toReal hfv_ne_top hfv_ne_bot]
+      rw[EReal.add_sub_cancel_right]
+    -- Rewrite `f∗∗ x` as a supremum over `v ∈ E`
+    rw [fenchelBiconjugate.eq_sup]
+    -- Substitute `f x` with `⟪v, x⟫ - f∗ v`
+    rw[hx]
+    -- `⟪v, x⟫ - f∗ v` is bounded by the supremum over all `v ∈ E`
+    exact le_iSup_iff.mpr fun b a ↦ a v
+
 /-! ## Convexity of the Fenchel conjugate -/
 
 /-- For fixed `x ∈ dom f`, the function `inner f x` is convex. -/
