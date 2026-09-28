@@ -83,7 +83,7 @@ lemma fenchelConjugate.ne_bot (v : E) : IsProper f → f∗ v ≠ ⊥ := by
   obtain ⟨x, h_ne_top, h_ne_bot⟩ := Set.nonempty_iff_ne_empty.mpr h
   use x
   -- Rewrite the finite `EReal` value `f x` as its real coercion
-  rw[← EReal.coe_toReal h_ne_top h_ne_bot]
+  rw [← EReal.coe_toReal h_ne_top h_ne_bot]
   -- The comparison reduces to `Ordering.lt`, giving the required `⊥ < ⟪v, x⟫ - f x`
   exact compareOfLessAndEq_eq_lt.mp rfl
 
@@ -92,11 +92,11 @@ theorem fenchel_young_inequality (v x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) 
   -- From the definition of `f∗`, we have `f∗ v ≥ ⟪v,x⟫ - f x`
   have h3 : f∗ v ≥ ⟪v,x⟫ - f x := by exact le_iSup_iff.mpr fun b a ↦ a x
   -- Rewrite the inequality with `≤`
-  rw[ge_iff_le] at h3
+  rw [ge_iff_le] at h3
   -- Since `f x ≠ ⊥` and `f∗ v ≠ ⊥`, add `f x` to both sides
   rw [EReal.sub_le_iff_le_add (Or.inl h1) (Or.inr (fenchelConjugate.ne_bot f v h2))] at h3
   -- Match the order of the terms using commutativity
-  rw[add_comm]
+  rw [add_comm]
   exact h3
 
 /-- For `x ∈ dom f`, `f x + f∗ v = ⟪v, x⟫` iff `f∗ v = ⟪v, x⟫ - f x`. -/
@@ -106,16 +106,16 @@ lemma fenchelConjugate.sub_iff_add_eq (v : E) (x : dom f) : f x + f∗ v = ⟪v,
   · -- (→) Assume `f x + f∗ v = ⟪v,x⟫`
     intro h
     -- Rewrite `⟪v,x⟫` as `f x + f∗ v `to get `f∗ v = f x + f∗ v - f x`
-    rw[← h]
+    rw [← h]
     -- Since `f x ≠ ⊥` and `f x ≠ ⊤`, `f x` is a real number
-    rw[← EReal.coe_toReal x.2.1 x.2.2]
+    rw [← EReal.coe_toReal x.2.1 x.2.2]
     -- Cancel `f x` to get `f∗ v = f∗ v`
     rw [EReal.add_sub_cancel_left]
   · -- (←) Assume `f∗ v = ⟪v,x⟫ - f x`
     intro h
     -- Rewrite `f∗ v` as `⟪v,x⟫ - f x`
-    rw[h]
-    rw[← EReal.coe_toReal x.2.1 x.2.2]
+    rw [h]
+    rw [← EReal.coe_toReal x.2.1 x.2.2]
     -- Rewrite the left-hand side using the fact that `a + (b - c) = a + b - c`
     rw [add_sub]
     -- Cancel `f x` to get `⟪v,x⟫ = ⟪v,x⟫`
@@ -126,7 +126,7 @@ theorem fenchel_young_eq.mp (v : E) (x : dom f) (h : IsProper f) : v ∈ ∂f x 
   -- Assume `v ∈ ∂f x`
   intro hv
   -- Apply the equivalence between `f x + f∗ v = ⟪v,x⟫` and `f∗ v = ⟪v,x⟫ - f x`
-  rw[fenchelConjugate.sub_iff_add_eq f v x]
+  rw [fenchelConjugate.sub_iff_add_eq f v x]
   -- Split into two inequalities: `f∗ v ≤ ⟪v,x⟫ - f x` and `⟪v,x⟫ - f x ≤ f∗ v`
   apply le_antisymm
   · -- Case 1: `f∗ v ≤ ⟪v,x⟫ - f x`
@@ -158,15 +158,15 @@ theorem fenchel_young_eq.mpr (v : E) (x : dom f) (h : IsProper f) : f x + f∗ v
   -- Add `⟪v,x⟫` to both sides of the subgradient inequality
   rw [EReal.sub_le_iff_le_add (Or.inl (EReal.coe_ne_bot ⟪v,x⟫)) (Or.inl (EReal.coe_ne_top ⟪v,x⟫))]
   -- Rewrite to group `⟪v,x⟫ - f x` together
-  rw[sub_eq_add_neg, add_assoc, add_comm (-f x), ← sub_eq_add_neg]
+  rw [sub_eq_add_neg, add_assoc, add_comm (-f x), ← sub_eq_add_neg]
   -- Substitute `⟪v,x⟫ - f x = f∗ v`
-  rw[← h_eq, add_comm]
+  rw [← h_eq, add_comm]
   -- Show that `f∗ v ≠ ⊤`
   have h_ne_top : f∗ v ≠ ⊤ := by
     -- `⟪v,x⟫ - f x ≠ ⊤`
     rw [h_eq]
     -- Coerce `f x` to a real number since `f x ≠ ⊤` and `f x ≠ ⊥`
-    rw[← EReal.coe_toReal x.2.1 x.2.2]
+    rw [← EReal.coe_toReal x.2.1 x.2.2]
     -- A real number is not equal to `⊤`
     exact EReal.coe_ne_top (⟪v,x⟫ - (f x).toReal)
   -- Show that `f∗ v ≠ ⊥`
@@ -196,7 +196,7 @@ lemma fenchelBiconjugate.eq_sup (x : E) : f∗∗ x = ⨆ v : E, ⟪v, x⟫ - f�
 /-- For proper `f` with `f x ≠ ⊥`, the Fenchel biconjugate satisfies `f∗∗ x ≤ f x`. -/
 theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f∗∗ x ≤ f x := by
   -- Write `f∗∗ x` as a supremum over `v ∈ E`
-  rw[fenchelBiconjugate.eq_sup]
+  rw [fenchelBiconjugate.eq_sup]
   -- Since the supremum of `⟪v,x⟫ - f∗ v` over all `v ∈ E` is `≤ f x` then `∀ i, ⟪i,x⟫ - f∗ i ≤ f x`
   apply iSup_le
   -- Suppose `v` is an arbitrary element of `E`
@@ -230,11 +230,11 @@ theorem fenchelBiconjugate_eq (x : dom f) (hproper : IsProper f) (hsub_nonempty 
     -- Rearrange the Fenchel-Young equality to isolate `f x`
     have hfx_eq : f x = ⟪v, x⟫ - f∗ v := by
       rw [← hfenchel_young, ← EReal.coe_toReal hconj_ne_top hconj_ne_bot]
-      rw[EReal.add_sub_cancel_right]
+      rw [EReal.add_sub_cancel_right]
     -- Rewrite `f∗∗ x` as a supremum over `v ∈ E`
     rw [fenchelBiconjugate.eq_sup]
     -- Substitute `f x` with `⟪v, x⟫ - f∗ v`
-    rw[hfx_eq]
+    rw [hfx_eq]
     -- `⟪v, x⟫ - f∗ v` is bounded by the supremum over all `v ∈ E`
     exact le_iSup_iff.mpr fun b a ↦ a v
 
@@ -314,7 +314,7 @@ lemma φ.iSup_epi_convex : Convex ℝ (epi (fun v : E => ⨆ x : dom f, φ.toERe
     -- Membership in the intersection is equivalent to membership in each epigraph
     simp [epi]
   -- Rewrite epigraph of the supremum as the intersection of epigraphs
-  rw[h_inter]
+  rw [h_inter]
   -- The intersection of convex sets is convex
   apply convex_iInter
   -- Each individual epigraph is convex by `φ.toEReal.epi_convex`
@@ -328,9 +328,9 @@ theorem fenchelConjugate.epi_convex (h : ∀ x, f x ≠ ⊥) : Convex ℝ (epi f
     -- `f∗ v` is the supremum of `φ.toEReal f x v` over `x ∈ dom f`
     ext v
     -- These two expressions are equal by `fenchelConjugate.eq_iSup_dom`
-    rw[fenchelConjugate.eq_iSup_dom f h]
+    rw [fenchelConjugate.eq_iSup_dom f h]
   -- Rewrite the epigraph of `f∗` as the epigraph of the supremum
-  rw[hf]
+  rw [hf]
   -- The epigraph of the supremum is convex
   exact φ.iSup_epi_convex f
 
@@ -383,7 +383,7 @@ lemma subdifferential_nonempty_f_ne_bot : ∂f x ≠ ∅ → ∀ y : E, f y ≠ 
   -- Write the subgradient inequality using `y`
   specialize hv y
   -- Substitute `f y = ⊥` into the subgradient inequality to get `⟪v,y⟫ - ⟪v,x⟫ ≤ ⊥`
-  rw[h_fy, EReal.bot_sub] at hv
+  rw [h_fy, EReal.bot_sub] at hv
   -- Since `⊥ < ⟪v,y⟫ - ⟪v,x⟫`, we have a contradiction
   contradiction
 
