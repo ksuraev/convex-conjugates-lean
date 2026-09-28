@@ -207,34 +207,34 @@ theorem fenchelBiconjugate_le (x : E) (h1 : f x ≠ ⊥) (h2 : IsProper f) : f�
   exact fenchel_young_inequality f v x h1 h2
 
 /-- For proper `f` with `∂f x ≠ ∅`, the Fenchel biconjugate satisfies `f∗∗ x = f x`. -/
-theorem fenchelBiconjugate_eq (x : dom f) (hproper : IsProper f) (hsub : ∂f x ≠ ∅) : f∗∗ x = f x := by
+theorem fenchelBiconjugate_eq (x : dom f) (hproper : IsProper f) (hsub_nonempty : ∂f x ≠ ∅) : f∗∗ x = f x := by
   -- Obtain `v ∈ ∂f x` using the nonemptiness of the subdifferential
-  obtain ⟨v, hv⟩ := Set.nonempty_iff_ne_empty.mpr hsub
+  obtain ⟨v, hv_mem⟩ := Set.nonempty_iff_ne_empty.mpr hsub_nonempty
   -- Split the equality into two inequalities: `f∗∗ x ≤ f x` and `f x ≤ f∗∗ x`
   apply le_antisymm
   · -- (≤) Show that `f∗∗ x ≤ f x` using the Fenchel biconjugate inequality
     exact fenchelBiconjugate_le f x x.2.2 hproper
   · -- (≥) Show that `f x ≤ f∗∗ x`
     -- Since `f` is proper, `f∗ v ≠ ⊥`
-    have hfv_ne_bot : f∗ v ≠ ⊥ := fenchelConjugate.ne_bot f v hproper
+    have hconj_ne_bot : f∗ v ≠ ⊥ := fenchelConjugate.ne_bot f v hproper
     -- Since `v ∈ ∂f x`, the Fenchel-Young equality holds
-    have h_FY_eq : f x + f∗ v = ⟪v, x⟫ := (fenchel_young_eq f v x hproper).mp hv
+    have hfenchel_young : f x + f∗ v = ⟪v, x⟫ := (fenchel_young_eq f v x hproper).mp hv_mem
     -- Show that `f∗ v ≠ ⊤`
-    have hfv_ne_top : f∗ v ≠ ⊤ := by
+    have hconj_ne_top : f∗ v ≠ ⊤ := by
       -- Assume `f∗ v = ⊤` for contradiction
-      by_contra hfv_ne_top
+      by_contra hconj_ne_top
       -- Then, `f x + f∗ v = ⊤ = ⟪v,x⟫`
-      rw [hfv_ne_top, EReal.add_top_of_ne_bot x.2.2] at h_FY_eq
+      rw [hconj_ne_top, EReal.add_top_of_ne_bot x.2.2] at hfenchel_young
       -- This contradicts the fact that `⟪v,x⟫` is finite
-      exact EReal.coe_ne_top _ h_FY_eq.symm
+      exact EReal.coe_ne_top _ hfenchel_young.symm
     -- Rearrange the Fenchel-Young equality to isolate `f x`
-    have hx : f x = ⟪v, x⟫ - f∗ v := by
-      rw [← h_FY_eq, ← EReal.coe_toReal hfv_ne_top hfv_ne_bot]
+    have hfx_eq : f x = ⟪v, x⟫ - f∗ v := by
+      rw [← hfenchel_young, ← EReal.coe_toReal hconj_ne_top hconj_ne_bot]
       rw[EReal.add_sub_cancel_right]
     -- Rewrite `f∗∗ x` as a supremum over `v ∈ E`
     rw [fenchelBiconjugate.eq_sup]
     -- Substitute `f x` with `⟪v, x⟫ - f∗ v`
-    rw[hx]
+    rw[hfx_eq]
     -- `⟪v, x⟫ - f∗ v` is bounded by the supremum over all `v ∈ E`
     exact le_iSup_iff.mpr fun b a ↦ a v
 
